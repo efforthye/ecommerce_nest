@@ -14,7 +14,7 @@
 - API 명세 및 Mock API 작성
 - Github Repo 제출
     - 기본 패키지 구조
-    - 서버 Configuration 등
+    - 서버 Configuration 등 
 
 ## 3주차 과제 자료
 ### **`e-커머스 서비스`**
