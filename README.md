@@ -278,7 +278,16 @@ Ref: carts.combination_id > option_combinations.id
 #### 인기 상품 조회
 ![alt text](<images/sequence diagram-6.png>)
 ### 장바구니 관련
-- 시간 남으면 추가
+#### 유저 장바구니 조회
+![alt text](<images/sequence diagram-10.png>)
+#### 유저 장바구니 상품 추가
+![alt text](<images/sequence diagram-11.png>)
+#### 유저 장바구니 상품 수량 변경
+![alt text](<images/sequence diagram-12.png>)
+#### 유저 장바구니 상품 삭제
+![alt text](<images/sequence diagram-13.png>)
+#### 유저 장바구니 상품 주문
+![alt text](<images/sequence diagram-14.png>)
 ### 상품 관련
 #### 상품 정보 조회
 ![alt text](<images/sequence diagram-7.png>)
