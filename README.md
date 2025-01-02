@@ -305,43 +305,45 @@ Ref: carts.combination_id > option_combinations.id
 ### 프로젝트 구조
 ```
 src/
-├── main.ts
-├── app.module.ts
-├── common/
-│   ├── interceptors/
-│   ├── filters/
-│   └── decorators/
-├── domain/
-│   ├── coupon/
-│   │   ├── entities/
-│   │   │   └── coupon.entity.ts
-│   │   └── interfaces/
-│   │       └── coupon.repository.interface.ts
+├── common/             # 공통 유틸리티
+│   └── comment.md      
+├── domain/            # 도메인 계층
 │   ├── order/
-│   │   ├── entities/
-│   │   │   └── order.entity.ts
-│   │   └── interfaces/
-│   │       └── order.repository.interface.ts
-│   └── user/
-├── infrastructure/
+│   └── comment.md
+│
+├── infrastructure/    # 인프라 계층
 │   ├── database/
-│   │   └── mysql.config.ts
+│   │   ├── typeorm/
+│   │   ├── database.config.ts
+│   │   ├── database.module.ts
+│   │   └── prisma.service.ts
 │   └── repositories/
-│       ├── coupon.repository.ts  
-│       └── order.repository.ts
-├── application/
-│   ├── facades/
-│   │   ├── coupon.facade.ts
-│   │   └── order.facade.ts
-│   ├── services/
-│   │   ├── coupon.service.ts
-│   │   └── order.service.ts
-│   └── dtos/
-└── interface/
-    └── controllers/
-        ├── coupon.controller.ts
-        └── order.controller.ts
-
+│       └── order.repository.impl.ts
+│
+├── interfaces/       # 인터페이스 계층
+│   ├── controllers/ # API 컨트롤러
+│   │   ├── balance.controller.ts
+│   │   ├── cart.controller.ts 
+│   │   ├── coupon.controller.ts
+│   │   ├── order.controller.ts
+│   │   ├── product.controller.ts
+│   │   └── test.controller.ts
+│   └── dto/        # 데이터 전송 객체
+│       ├── balance.dto.ts
+│       ├── cart.dto.ts
+│       └── order.dto.ts
+│
+├── facades/        # 파사드 패턴
+│   ├── order.facade.ts
+│   └── comment.md
+│
+├── main.ts              # 애플리케이션 시작점
+├── app.module.ts        # 앱 모듈
+│
+└── test/          # 테스트
+   └── it/
+       └── example/
+           └── example.it.spec.ts
 ```
 
 ### 프로젝트 실행 방법
