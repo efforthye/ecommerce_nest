@@ -15,7 +15,8 @@
     - [통계 관련](#통계-관련)
     - [장바구니 관련](#장바구니-관련)
     - [상품 관련](#상품-관련)
-4. [프로젝트 구조](#프로젝트-구조)
+4. [Mock API 생성](#mock-api-생성)
+5. [프로젝트 구조](#프로젝트-구조)
 <br/><br/>
 
 ## ERD Diagram
@@ -285,6 +286,7 @@ Ref: carts.combination_id > option_combinations.id
 ![alt text](<images/sequence diagram-9.png>)
 
 ## Mock API 생성
+### Swagger API Docs
 ![alt text](images/swagger_mock.png)
 
 ## 프로젝트 구조
