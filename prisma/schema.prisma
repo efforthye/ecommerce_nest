@@ -3,32 +3,189 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql" // 사용하는 데이터베이스 타입 (예: postgresql, mysql, sqlite 등)
-  url      = env("DATABASE_URL") // 환경 변수에서 데이터베이스 URL을 가져옵니다.
+  provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 model Users {
-  id        Int           @id @default(autoincrement())
-  name      String
-  email     String        @unique
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  orders    Orders[]
-  balance   UserBalance?  // 1:1 관계
-}
-
-model Orders {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  totalAmount Decimal
-  user        Users    @relation(fields: [userId], references: [id])
-  createdAt   DateTime @default(now())
+  id            Int             @id @default(autoincrement())
+  name          String
+  email         String         @unique
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  userBalance   UserBalance?
+  orders        Orders[]
+  userCoupons   UserCoupons[]
+  couponHistory CouponHistory[]
+  carts         Carts[]
 }
 
 model UserBalance {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @unique // @unique 추가
-  balance   Decimal
-  user      Users    @relation(fields: [userId], references: [id])
-  updatedAt DateTime @default(now())
+  id              Int               @id @default(autoincrement())
+  userId          Int               @unique
+  balance         Decimal
+  updatedAt       DateTime          @updatedAt
+  user            Users             @relation(fields: [userId], references: [id])
+  balanceHistory  BalanceHistory[]
+}
+
+model BalanceHistory {
+  id              Int           @id @default(autoincrement())
+  userBalanceId   Int
+  balanceBefore   Decimal
+  amount          Decimal
+  balanceAfter    Decimal
+  type            String        // 충전/사용/환불 등
+  createdAt       DateTime      @default(now())
+  userBalance     UserBalance   @relation(fields: [userBalanceId], references: [id])
+}
+
+model Coupons {
+  id                Int               @id @default(autoincrement())
+  name              String
+  type              String            // 금액/비율 유형
+  amount            Decimal           // 할인 금액(정액) 또는 비율(정률)
+  minOrderAmount    Decimal           // 최소 주문 금액
+  validDays         Int               // 발급일로부터 유효기간(일)
+  createdAt         DateTime          @default(now())
+  fcfsCoupons       FcfsCoupons[]
+  userCoupons       UserCoupons[]
+  couponHistory     CouponHistory[]
+}
+
+model FcfsCoupons {
+  id                Int       @id @default(autoincrement())
+  couponId          Int
+  totalQuantity     Int
+  remainingQuantity Int
+  startDate         DateTime
+  endDate           DateTime
+  createdAt         DateTime  @default(now())
+  coupon            Coupons   @relation(fields: [couponId], references: [id])
+}
+
+model UserCoupons {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  couponId    Int
+  status      String    // 사용가능/만료
+  expiryDate  DateTime
+  createdAt   DateTime  @default(now())
+  usedAt      DateTime?
+  user        Users     @relation(fields: [userId], references: [id])
+  coupon      Coupons   @relation(fields: [couponId], references: [id])
+  orders      Orders[]
+}
+
+model CouponHistory {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  couponId    Int
+  action      String    // 발급/사용/복구/만료
+  createdAt   DateTime  @default(now())
+  user        Users     @relation(fields: [userId], references: [id])
+  coupon      Coupons   @relation(fields: [couponId], references: [id])
+}
+
+model Products {
+  id                  Int                   @id @default(autoincrement())
+  name                String
+  basePrice           Decimal
+  description         String                @db.Text
+  isActive            Boolean
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  productImages       ProductImages[]
+  productOptions      ProductOptions[]
+  optionCombinations  OptionCombinations[]
+  productInventory    ProductInventory[]
+  orderItems          OrderItems[]
+  carts              Carts[]
+}
+
+model ProductImages {
+  id            Int       @id @default(autoincrement())
+  productId     Int
+  imageUrl      String
+  isMainImage   Boolean
+  order         Int
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  product       Products  @relation(fields: [productId], references: [id])
+}
+
+model ProductOptions {
+  id          Int       @id @default(autoincrement())
+  productId   Int
+  name        String    // 옵션명 (색상/사이즈 등)
+  value       String    // 옵션값
+  createdAt   DateTime  @default(now())
+  product     Products  @relation(fields: [productId], references: [id])
+}
+
+model OptionCombinations {
+  id              Int                 @id @default(autoincrement())
+  productId       Int
+  combinationName String              // 옵션 조합명 (빨강-L 등)
+  optionIds       Json                // 옵션 아이디 배열
+  additionalPrice Decimal
+  createdAt       DateTime            @default(now())
+  product         Products            @relation(fields: [productId], references: [id])
+  productInventory ProductInventory[]
+  carts           Carts[]
+}
+
+model ProductInventory {
+  id              Int                 @id @default(autoincrement())
+  productId       Int
+  combinationId   Int
+  stockQuantity   Int
+  finalPrice      Decimal
+  updatedAt       DateTime            @updatedAt
+  product         Products            @relation(fields: [productId], references: [id])
+  combination     OptionCombinations  @relation(fields: [combinationId], references: [id])
+  orderItems      OrderItems[]
+}
+
+model Orders {
+  id              Int           @id @default(autoincrement())
+  userId          Int
+  couponId        Int?
+  totalAmount     Decimal       // 총 주문금액
+  discountAmount  Decimal       // 할인금액
+  finalAmount     Decimal       // 최종결제금액
+  status          String        // 결제대기/결제완료/배송중/배송완료등
+  orderedAt       DateTime      @default(now())
+  paidAt          DateTime?
+  user            Users         @relation(fields: [userId], references: [id])
+  coupon          UserCoupons?  @relation(fields: [couponId], references: [id])
+  orderItems      OrderItems[]
+}
+
+model OrderItems {
+  id            Int               @id @default(autoincrement())
+  orderId       Int
+  productId     Int
+  inventoryId   Int
+  quantity      Int
+  unitPrice     Decimal
+  totalPrice    Decimal
+  createdAt     DateTime          @default(now())
+  order         Orders            @relation(fields: [orderId], references: [id])
+  product       Products          @relation(fields: [productId], references: [id])
+  inventory     ProductInventory  @relation(fields: [inventoryId], references: [id])
+}
+
+model Carts {
+  id            Int                 @id @default(autoincrement())
+  userId        Int
+  productId     Int
+  combinationId Int
+  quantity      Int
+  price         Decimal
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  user          Users               @relation(fields: [userId], references: [id])
+  product       Products            @relation(fields: [productId], references: [id])
+  combination   OptionCombinations  @relation(fields: [combinationId], references: [id])
 }
