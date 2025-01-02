@@ -5,6 +5,7 @@ import { BalanceController } from "./interfaces/controllers/balance.controller";
 import { ProductController } from "./interfaces/controllers/product.controller";
 import { OrderController } from "./interfaces/controllers/order.controller";
 import { CartController } from "./interfaces/controllers/cart.controller";
+import { TestController } from "./interfaces/controllers/test.controller";
 
 @Module({
   imports: [DatabaseModule],
@@ -13,7 +14,8 @@ import { CartController } from "./interfaces/controllers/cart.controller";
     BalanceController,
     ProductController,
     OrderController,
-    CartController
+    CartController,
+    TestController
   ],
   providers: [],
 })

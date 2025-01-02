@@ -16,7 +16,9 @@
     - [장바구니 관련](#장바구니-관련)
     - [상품 관련](#상품-관련)
 4. [Mock API 생성](#mock-api-생성)
-5. [프로젝트 구조](#프로젝트-구조)
+5. [프로젝트 구조 및 실행 방법](#프로젝트-구조-및-실행-방법)
+    - [프로젝트 구조](#프로젝트-구조)
+    - [프로젝트 실행 방법](#프로젝트-실행-방법)
 <br/><br/>
 
 ## ERD Diagram
@@ -290,7 +292,8 @@ Ref: carts.combination_id > option_combinations.id
 ![alt text](images/swagger_mock.png)
 <br/><br/>
 
-## 프로젝트 구조
+## 프로젝트 구조 및 실행 방법
+### 프로젝트 구조
 ```
 src/
 ├── main.ts
@@ -331,3 +334,5 @@ src/
         └── order.controller.ts
 
 ```
+
+### 프로젝트 실행 방법
