@@ -299,6 +299,7 @@ Ref: carts.combination_id > option_combinations.id
 ## Mock API 생성
 ### Swagger API Docs
 ![alt text](images/swagger_mock.png)
+- 서버 실행 -> http://localhost:3000/api 접근
 <br/><br/>
 
 ## 프로젝트 구조 및 실행 방법
