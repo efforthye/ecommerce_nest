@@ -345,3 +345,6 @@ src/
 ```
 
 ### 프로젝트 실행 방법
+1. 환경 설정: `cp .env.example .env`
+2. 의존성 설치: `npm install`
+3. 서버 실행: `npm run start`
