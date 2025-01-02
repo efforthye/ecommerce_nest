@@ -1,10 +1,26 @@
 # 이커머스 서비스 개발
-## 프로젝트 개발 계획(Milestone) 작성
+## 프로젝트 개발 계획(Milestone)
 ![alt text](images/milestone2.png)
 - URL: https://github.com/users/efforthye/projects/4/views/4?groupedBy%5BcolumnId%5D=158073164&sortedBy%5Bdirection%5D=desc&sortedBy%5BcolumnId%5D=Labels
 <br/><br/>
 
-## 이커머스 시스템 설계
+# 이커머스 시스템 설계
+## 목차
+1. [ERD Diagram](#erd-diagram)
+2. [플로우 차트 (Flow Chart)](#플로우-차트-flow-chart)
+    - [플로우 차트 설명](#플로우-차트-설명)
+3. [시퀀스 다이어그램](#시퀀스-다이어그램)
+    - [쿠폰 관련](#쿠폰-관련)
+    - [잔액 관련](#잔액-관련) 
+    - [통계 관련](#통계-관련)
+    - [장바구니 관련](#장바구니-관련)
+    - [상품 관련](#상품-관련)
+<br/><br/>
+
+## ERD Diagram
+![alt text](<images/erd.png>)
+- Edit URL: https://dbdiagram.io/d/6776be0e5406798ef7207566
+
 ## 플로우 차트 (Flow Chart)
 ![alt text](images/flowchart6.png)
 - Edit URL: https://www.mermaidchart.com/app/projects/61b24fd9-39ad-4447-b860-aa6c8c03bb75/diagrams/4b2115c1-56fc-4503-ad0d-9919d4e41684/version/v0.1/edit
@@ -39,20 +55,16 @@
 ![alt text](<images/sequence diagram-2_1.png>)
 #### 유저의 쿠폰 목록 조회
 ![alt text](<images/sequence diagram-3.png>)
-
 ### 잔액 관련
 #### 유저 잔액 조회
 ![alt text](<images/sequence diagram-5.png>)
 #### 유저 잔액 충전
 ![alt text](<images/sequence diagram-4_1.png>)
-
 ### 통계 관련
 #### 인기 상품 조회
 ![alt text](<images/sequence diagram-6.png>)
-
 ### 장바구니 관련
 - 시간 남으면 추가
-
 ### 상품 관련
 #### 상품 정보 조회
 ![alt text](<images/sequence diagram-7.png>)
