@@ -20,6 +20,7 @@
 ## ERD Diagram
 ![alt text](<images/erd.png>)
 - Edit URL: https://dbdiagram.io/d/6776be0e5406798ef7207566
+### 테이블 설계 상세 정의내역
 ```
 /*
 * 유저 관련 테이블
@@ -228,6 +229,7 @@ Ref: carts.user_id > users.id
 Ref: carts.product_id > products.id
 Ref: carts.combination_id > option_combinations.id
 ```
+<br/><br/>
 
 ## 플로우 차트 (Flow Chart)
 ![alt text](images/flowchart6.png)
