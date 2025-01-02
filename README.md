@@ -15,6 +15,7 @@
     - [통계 관련](#통계-관련)
     - [장바구니 관련](#장바구니-관련)
     - [상품 관련](#상품-관련)
+4. [프로젝트 구조](#프로젝트-구조)
 <br/><br/>
 
 ## ERD Diagram
@@ -282,3 +283,48 @@ Ref: carts.combination_id > option_combinations.id
 ![alt text](<images/sequence diagram-8_2.png>)
 #### 상품 결제 진행
 ![alt text](<images/sequence diagram-9.png>)
+
+## Mock API
+- 
+
+## 프로젝트 구조
+```
+src/
+├── main.ts
+├── app.module.ts
+├── common/
+│   ├── interceptors/
+│   ├── filters/
+│   └── decorators/
+├── domain/
+│   ├── coupon/
+│   │   ├── entities/
+│   │   │   └── coupon.entity.ts
+│   │   └── interfaces/
+│   │       └── coupon.repository.interface.ts
+│   ├── order/
+│   │   ├── entities/
+│   │   │   └── order.entity.ts
+│   │   └── interfaces/
+│   │       └── order.repository.interface.ts
+│   └── user/
+├── infrastructure/
+│   ├── database/
+│   │   └── mysql.config.ts
+│   └── repositories/
+│       ├── coupon.repository.ts  
+│       └── order.repository.ts
+├── application/
+│   ├── facades/
+│   │   ├── coupon.facade.ts
+│   │   └── order.facade.ts
+│   ├── services/
+│   │   ├── coupon.service.ts
+│   │   └── order.service.ts
+│   └── dtos/
+└── interface/
+    └── controllers/
+        ├── coupon.controller.ts
+        └── order.controller.ts
+
+```
