@@ -6,7 +6,7 @@
 
 ## 이커머스 시스템 설계
 ## 플로우 차트 (Flow Chart)
-![alt text](images/flowchart5.png)
+![alt text](images/flowchart6.png)
 - Edit URL: https://www.mermaidchart.com/app/projects/61b24fd9-39ad-4447-b860-aa6c8c03bb75/diagrams/4b2115c1-56fc-4503-ad0d-9919d4e41684/version/v0.1/edit
 
 ### 플로우 차트 설명
@@ -50,7 +50,13 @@
 #### 인기 상품 조회
 ![alt text](<images/sequence diagram-6.png>)
 
+### 장바구니 관련
+- 시간 남으면 추가
+
 ### 상품 관련
 #### 상품 정보 조회
 ![alt text](<images/sequence diagram-7.png>)
-
+#### 상품 주문 생성
+![alt text](<images/sequence diagram-8_2.png>)
+#### 상품 결제 진행
+![alt text](<images/sequence diagram-9.png>)
