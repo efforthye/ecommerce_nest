@@ -284,8 +284,8 @@ Ref: carts.combination_id > option_combinations.id
 #### 상품 결제 진행
 ![alt text](<images/sequence diagram-9.png>)
 
-## Mock API
-- 
+## Mock API 생성
+![alt text](images/swagger_mock.png)
 
 ## 프로젝트 구조
 ```
