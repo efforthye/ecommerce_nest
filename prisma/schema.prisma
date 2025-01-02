@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql" // 사용하는 데이터베이스 타입 (예: postgresql, mysql, sqlite 등)
+  url      = env("DATABASE_URL") // 환경 변수에서 데이터베이스 URL을 가져옵니다.
+}
+
+model Users {
+  id        Int           @id @default(autoincrement())
+  name      String
+  email     String        @unique
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  orders    Orders[]
+  balance   UserBalance?  // 1:1 관계
+}
+
+model Orders {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  totalAmount Decimal
+  user        Users    @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model UserBalance {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique // @unique 추가
+  balance   Decimal
+  user      Users    @relation(fields: [userId], references: [id])
+  updatedAt DateTime @default(now())
+}
