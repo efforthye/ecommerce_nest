@@ -324,12 +324,12 @@ UNIQUE INDEX idx_product_variant_unique ON product_variant(product_id, option_na
 #### 유저 장바구니 상품 삭제
 ![alt text](<images/sequence diagram-13.png>)
 #### 유저 장바구니 상품 주문
-![alt text](<images/sequence diagram-14.png>)
+![alt text](<images/sequence diagram-14_2.png>)
 ### 상품 관련
 #### 상품 정보 조회
 ![alt text](<images/sequence diagram-7.png>)
 #### 상품 주문 생성
-![alt text](<images/sequence diagram-8_2.png>)
+![alt text](<images/sequence diagram-8_3.png>)
 #### 상품 결제 진행
 ![alt text](<images/sequence diagram-9.png>)
 
