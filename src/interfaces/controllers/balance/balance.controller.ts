@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post } from "@nestjs/common";
 import { ApiOperation, ApiTags, ApiResponse, ApiBody } from "@nestjs/swagger";
-import { ChargeBalanceDto } from "../dto/balance.dto";
+import { ChargeBalanceDto } from "../../dto/balance.dto";
 
 @Controller('balance')
 @ApiTags('balance')

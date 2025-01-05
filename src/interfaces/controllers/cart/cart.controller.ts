@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from "@nestjs/common";
 import { ApiOperation, ApiTags, ApiResponse, ApiBody } from "@nestjs/swagger";
-import { AddToCartDto, UpdateCartDto } from "../dto/cart.dto";
+import { AddToCartDto, UpdateCartDto } from "../../dto/cart.dto";
 
 @Controller('cart')
 @ApiTags('cart')
