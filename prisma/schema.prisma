@@ -7,185 +7,243 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Users {
-  id            Int             @id @default(autoincrement())
-  name          String
-  email         String         @unique
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  userBalance   UserBalance?
-  orders        Orders[]
-  userCoupons   UserCoupons[]
-  couponHistory CouponHistory[]
-  carts         Carts[]
+// 회원 기본 정보
+model UserAccount {
+  id              Int               @id @default(autoincrement()) // 유저 아이디
+  name            String            // 유저 이름
+  email           String            @unique // 유저 이메일 (고유값)
+  createdAt       DateTime          @default(now()) // 가입 일시
+  updatedAt       DateTime          @updatedAt // 정보 수정 일시
+  userBalance     UserBalance? // 유저 잔액 정보
+  orders          Order[] // 주문 목록
+  userCoupons     UserCoupon[] // 보유 쿠폰 목록
+  userCouponHistory CouponHistory[] // 쿠폰 사용 이력
+  userCart        UserCart[] // 장바구니 목록
+  payments        Payment[] // 결제 내역
 }
 
+// 유저 잔액 정보
 model UserBalance {
-  id              Int               @id @default(autoincrement())
-  userId          Int               @unique
-  balance         Decimal
-  updatedAt       DateTime          @updatedAt
-  user            Users             @relation(fields: [userId], references: [id])
-  balanceHistory  BalanceHistory[]
+  id              Int               @id @default(autoincrement()) // 잔액 정보 아이디
+  userId          Int               @unique // 유저 아이디 (1:1 관계)
+  balance         Decimal           // 현재 잔액
+  updatedAt       DateTime          @updatedAt // 잔액 갱신 시간
+  user            UserAccount       @relation(fields: [userId], references: [id])
+  balanceHistory  BalanceHistory[] // 잔액 변동 이력
 }
 
+// 잔액 변동 이력
 model BalanceHistory {
-  id              Int           @id @default(autoincrement())
-  userBalanceId   Int
-  balanceBefore   Decimal
-  amount          Decimal
-  balanceAfter    Decimal
-  type            String        // 충전/사용/환불 등
-  createdAt       DateTime      @default(now())
+  id              Int           @id @default(autoincrement()) // 이력 아이디
+  userBalanceId   Int           // 유저 잔액 아이디
+  type            BalanceType   // 변동 유형: CHARGE(충전), USE(사용), REFUND(환불)
+  amount          Decimal       // 변동 금액 (양수: 충전/환불, 음수: 사용)
+  afterBalance    Decimal       // 변동 후 잔액
+  createdAt       DateTime      @default(now()) // 변동 발생 시간
   userBalance     UserBalance   @relation(fields: [userBalanceId], references: [id])
 }
 
-model Coupons {
-  id                Int               @id @default(autoincrement())
-  name              String
-  type              String            // 금액/비율 유형
+// 쿠폰 기본 정보
+model Coupon {
+  id                Int               @id @default(autoincrement()) // 쿠폰 아이디
+  name              String            // 쿠폰명
+  type              String            // 할인 유형 (금액/비율)
   amount            Decimal           // 할인 금액(정액) 또는 비율(정률)
   minOrderAmount    Decimal           // 최소 주문 금액
   validDays         Int               // 발급일로부터 유효기간(일)
-  createdAt         DateTime          @default(now())
-  fcfsCoupons       FcfsCoupons[]
-  userCoupons       UserCoupons[]
-  couponHistory     CouponHistory[]
+  createdAt         DateTime          @default(now()) // 쿠폰 생성 시간
+  fcfsCoupons       FcfsCoupon[] // 선착순 쿠폰 정보
+  userCoupons       UserCoupon[] // 유저별 보유 쿠폰
+  couponHistory     CouponHistory[] // 쿠폰 사용 이력
 }
 
-model FcfsCoupons {
-  id                Int       @id @default(autoincrement())
-  couponId          Int
-  totalQuantity     Int
-  remainingQuantity Int
-  startDate         DateTime
-  endDate           DateTime
-  createdAt         DateTime  @default(now())
-  coupon            Coupons   @relation(fields: [couponId], references: [id])
+// 선착순 쿠폰 관리
+model FcfsCoupon {
+  id              Int       @id @default(autoincrement()) // 선착순 쿠폰 아이디
+  couponId        Int       // 쿠폰 아이디
+  totalQuantity   Int       // 총 발행량
+  stockQuantity   Int       // 잔여 발행량
+  startDate       DateTime  // 발급 시작 일시
+  endDate         DateTime  // 발급 종료 일시
+  createdAt       DateTime  @default(now()) // 등록 일시
+  coupon          Coupon    @relation(fields: [couponId], references: [id])
 }
 
-model UserCoupons {
-  id          Int       @id @default(autoincrement())
-  userId      Int
-  couponId    Int
-  status      String    // 사용가능/만료
-  expiryDate  DateTime
-  createdAt   DateTime  @default(now())
-  usedAt      DateTime?
-  user        Users     @relation(fields: [userId], references: [id])
-  coupon      Coupons   @relation(fields: [couponId], references: [id])
-  orders      Orders[]
+// 유저별 보유 쿠폰
+model UserCoupon {
+  id          Int           @id @default(autoincrement()) // 유저 쿠폰 아이디
+  userId      Int           // 유저 아이디
+  couponId    Int           // 쿠폰 아이디
+  status      CouponStatus  // 쿠폰 상태: AVAILABLE(사용가능), EXPIRED(만료)
+  expiryDate  DateTime      // 만료 일시
+  createdAt   DateTime      @default(now()) // 발급 일시
+  usedAt      DateTime?     // 사용 일시
+  user        UserAccount   @relation(fields: [userId], references: [id])
+  coupon      Coupon        @relation(fields: [couponId], references: [id])
+  orders      Order[]       // 쿠폰이 사용된 주문들
 }
 
+// 쿠폰 사용 이력
 model CouponHistory {
-  id          Int       @id @default(autoincrement())
-  userId      Int
-  couponId    Int
-  action      String    // 발급/사용/복구/만료
-  createdAt   DateTime  @default(now())
-  user        Users     @relation(fields: [userId], references: [id])
-  coupon      Coupons   @relation(fields: [couponId], references: [id])
+  id          Int           @id @default(autoincrement()) // 이력 아이디
+  userId      Int           // 유저 아이디
+  couponId    Int           // 쿠폰 아이디
+  action      CouponAction  // 상태 변경 유형: ISSUED(발급), USED(사용), RESTORED(복구), EXPIRED(만료)
+  createdAt   DateTime      @default(now()) // 이력 생성 시간
+  user        UserAccount   @relation(fields: [userId], references: [id])
+  coupon      Coupon        @relation(fields: [couponId], references: [id])
 }
 
-model Products {
-  id                  Int                   @id @default(autoincrement())
-  name                String
-  basePrice           Decimal
-  description         String                @db.Text
-  isActive            Boolean
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  productImages       ProductImages[]
-  productOptions      ProductOptions[]
-  optionCombinations  OptionCombinations[]
-  productInventory    ProductInventory[]
-  orderItems          OrderItems[]
-  carts              Carts[]
+// 상품 기본 정보
+model Product {
+  id            Int               @id @default(autoincrement()) // 상품 아이디
+  name          String            // 상품명
+  basePrice     Decimal           // 기본 가격
+  description   String            @db.Text // 상품 설명
+  isActive      Boolean           // 판매 상태 (true: 판매중, false: 미판매)
+  createdAt     DateTime          @default(now()) // 등록 일시
+  updatedAt     DateTime          @updatedAt // 수정 일시
+  productImages ProductImage[] // 상품 이미지들
+  variants      ProductVariant[] // 상품 옵션 variants
+  orderItems    OrderItem[] // 주문 상품 내역
+  userCart      UserCart[] // 장바구니 내역
 }
 
-model ProductImages {
-  id            Int       @id @default(autoincrement())
-  productId     Int
-  imageUrl      String
-  isMainImage   Boolean
-  order         Int
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  product       Products  @relation(fields: [productId], references: [id])
+// 상품 이미지
+model ProductImage {
+  id          Int       @id @default(autoincrement()) // 이미지 아이디
+  productId   Int       // 상품 아이디
+  imageUrl    String    // 이미지 URL
+  sequence    Int       // 이미지 정렬 순서
+  createdAt   DateTime  @default(now()) // 등록 일시
+  updatedAt   DateTime  @updatedAt // 수정 일시
+  product     Product   @relation(fields: [productId], references: [id])
 }
 
-model ProductOptions {
-  id          Int       @id @default(autoincrement())
-  productId   Int
-  name        String    // 옵션명 (색상/사이즈 등)
-  value       String    // 옵션값
-  createdAt   DateTime  @default(now())
-  product     Products  @relation(fields: [productId], references: [id])
+// 상품 옵션 및 재고 관리
+model ProductVariant {
+  id              Int           @id @default(autoincrement()) // variant 아이디
+  productId       Int           // 상품 아이디
+  optionName      String        // 옵션 조합명 (예: 빨강-L)
+  stockQuantity   Int           // 재고 수량
+  price          Decimal       // 옵션 가격
+  createdAt       DateTime      @default(now()) // 등록 일시
+  updatedAt       DateTime      @updatedAt // 수정 일시
+  product         Product       @relation(fields: [productId], references: [id])
+  orderItems      OrderItem[] // 주문 상품 내역
+  userCart        UserCart[] // 장바구니 내역
+
+  @@unique([productId, optionName]) // 동일 상품의 동일 옵션명 중복 방지
 }
 
-model OptionCombinations {
-  id              Int                 @id @default(autoincrement())
-  productId       Int
-  combinationName String              // 옵션 조합명 (빨강-L 등)
-  optionIds       Json                // 옵션 아이디 배열
-  additionalPrice Decimal
-  createdAt       DateTime            @default(now())
-  product         Products            @relation(fields: [productId], references: [id])
-  productInventory ProductInventory[]
-  carts           Carts[]
-}
-
-model ProductInventory {
-  id              Int                 @id @default(autoincrement())
-  productId       Int
-  combinationId   Int
-  stockQuantity   Int
-  finalPrice      Decimal
-  updatedAt       DateTime            @updatedAt
-  product         Products            @relation(fields: [productId], references: [id])
-  combination     OptionCombinations  @relation(fields: [combinationId], references: [id])
-  orderItems      OrderItems[]
-}
-
-model Orders {
-  id              Int           @id @default(autoincrement())
-  userId          Int
-  couponId        Int?
+// 주문 정보
+model Order {
+  id              Int           @id @default(autoincrement()) // 주문 아이디
+  userId          Int           // 유저 아이디
+  couponId        Int?          // 사용된 쿠폰 아이디
   totalAmount     Decimal       // 총 주문금액
   discountAmount  Decimal       // 할인금액
   finalAmount     Decimal       // 최종결제금액
-  status          String        // 결제대기/결제완료/배송중/배송완료등
-  orderedAt       DateTime      @default(now())
-  paidAt          DateTime?
-  user            Users         @relation(fields: [userId], references: [id])
-  coupon          UserCoupons?  @relation(fields: [couponId], references: [id])
-  orderItems      OrderItems[]
+  status          OrderStatus   // 주문 상태: PENDING(대기), PAID(결제완료), SHIPPING(배송중), DELIVERED(배송완료), CANCELLED(취소)
+  orderedAt       DateTime      @default(now()) // 주문 시간
+  paidAt          DateTime?     // 결제 완료 시간
+  user            UserAccount   @relation(fields: [userId], references: [id])
+  coupon          UserCoupon?   @relation(fields: [couponId], references: [id])
+  orderItems      OrderItem[] // 주문 상품 목록
+  payments        Payment[] // 결제 정보
 }
 
-model OrderItems {
-  id            Int               @id @default(autoincrement())
-  orderId       Int
-  productId     Int
-  inventoryId   Int
-  quantity      Int
-  unitPrice     Decimal
-  totalPrice    Decimal
-  createdAt     DateTime          @default(now())
-  order         Orders            @relation(fields: [orderId], references: [id])
-  product       Products          @relation(fields: [productId], references: [id])
-  inventory     ProductInventory  @relation(fields: [inventoryId], references: [id])
+// 주문 상품 상세
+model OrderItem {
+  id               Int            @id @default(autoincrement()) // 주문 상품 아이디
+  orderId          Int           // 주문 아이디
+  productId        Int           // 상품 아이디
+  optionVariantId  Int           // 상품 옵션 variant 아이디
+  quantity         Int           // 주문 수량
+  unitPrice        Decimal       // 단가
+  totalPrice       Decimal       // 총 금액
+  createdAt        DateTime      @default(now()) // 등록 시간
+  order            Order         @relation(fields: [orderId], references: [id])
+  product          Product       @relation(fields: [productId], references: [id])
+  productVariant   ProductVariant @relation(fields: [optionVariantId], references: [id])
 }
 
-model Carts {
-  id            Int                 @id @default(autoincrement())
-  userId        Int
-  productId     Int
-  combinationId Int
-  quantity      Int
-  price         Decimal
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  user          Users               @relation(fields: [userId], references: [id])
-  product       Products            @relation(fields: [productId], references: [id])
-  combination   OptionCombinations  @relation(fields: [combinationId], references: [id])
+// 장바구니
+model UserCart {
+  id               Int            @id @default(autoincrement()) // 장바구니 아이디
+  userId           Int           // 유저 아이디
+  productId        Int           // 상품 아이디
+  optionVariantId  Int           // 상품 옵션 variant 아이디
+  quantity         Int           // 수량
+  price            Decimal       // 상품 가격
+  createdAt        DateTime      @default(now()) // 등록 일시
+  updatedAt        DateTime      @updatedAt // 수정 일시
+  user             UserAccount    @relation(fields: [userId], references: [id])
+  product          Product        @relation(fields: [productId], references: [id])
+  productVariant   ProductVariant @relation(fields: [optionVariantId], references: [id])
+}
+
+// 결제 정보
+model Payment {
+  id                Int             @id @default(autoincrement()) // 결제 아이디
+  orderId          Int            // 주문 아이디
+  userId           Int            // 유저 아이디
+  paymentMethod    String         // 결제 수단 (카드/가상계좌/간편결제 등)
+  amount           Decimal        // 결제 금액
+  status           PaymentStatus  // 결제 상태: PENDING(대기), COMPLETED(완료), CANCELLED(취소)
+  pgTransactionId  String         // PG사 거래 고유번호
+  createdAt        DateTime       @default(now()) // 결제 시도 시간
+  paidAt           DateTime?      // 결제 완료 시간
+  cancelledAt      DateTime?      // 결제 취소 시간
+  order            Order          @relation(fields: [orderId], references: [id])
+  user             UserAccount    @relation(fields: [userId], references: [id])
+  paymentHistory   PaymentHistory[] // 결제 상태 변경 이력
+}
+
+// 결제 상태 변경 이력
+model PaymentHistory {
+  id              Int           @id @default(autoincrement()) // 이력 아이디
+  paymentId       Int           // 결제 아이디
+  statusBefore    PaymentStatus // 변경 전 상태
+  statusAfter     PaymentStatus // 변경 후 상태
+  reason          String?       // 상태 변경 사유
+  createdAt       DateTime      @default(now()) // 이력 생성 시간
+  payment         Payment       @relation(fields: [paymentId], references: [id])
+}
+
+// 주문 상태값
+enum OrderStatus {
+  PENDING    // 결제 대기
+  PAID       // 결제 완료
+  SHIPPING   // 배송중
+  DELIVERED  // 배송 완료
+  CANCELLED  // 주문 취소
+}
+
+// 결제 상태값
+enum PaymentStatus {
+  PENDING    // 결제 대기
+  COMPLETED  // 결제 완료
+  CANCELLED  // 결제 취소
+}
+
+// 쿠폰 상태값
+enum CouponStatus {
+  AVAILABLE  // 사용 가능
+  EXPIRED    // 만료됨
+}
+
+// 쿠폰 액션 타입
+enum CouponAction {
+  ISSUED    // 발급됨
+  USED      // 사용됨
+  RESTORED  // 복구됨
+  EXPIRED   // 만료됨
+}
+
+// 잔액 변동 타입
+enum BalanceType {
+  CHARGE    // 충전
+  USE       // 사용
+  REFUND    // 환불
 }
