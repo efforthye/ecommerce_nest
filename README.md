@@ -364,12 +364,20 @@ src/
 │
 ├── interfaces/       # 인터페이스 계층
 │   ├── controllers/ # API 컨트롤러
-│   │   ├── balance.controller.ts
-│   │   ├── cart.controller.ts 
-│   │   ├── coupon.controller.ts
-│   │   ├── order.controller.ts
-│   │   ├── product.controller.ts
-│   │   └── test.controller.ts
+│   │   ├── balance/
+│   │   │   └── balance.controller.ts
+│   │   ├── cart/
+│   │   │   └── cart.controller.ts
+│   │   ├── coupon/
+│   │   │   └── coupon.controller.ts
+│   │   ├── order/
+│   │   │   └── order.controller.ts
+│   │   ├── payment/
+│   │   │   └── payment.controller.ts
+│   │   ├── product/
+│   │   │   └── product.controller.ts
+│   │   └── test/
+│   │       └── test.controller.ts
 │   └── dto/        # 데이터 전송 객체
 │       ├── balance.dto.ts
 │       ├── cart.dto.ts
@@ -383,9 +391,9 @@ src/
 ├── app.module.ts        # 앱 모듈
 │
 └── test/          # 테스트
-   └── it/
-       └── example/
-           └── example.it.spec.ts
+    └── it/
+        └── example/
+            └── example.it.spec.ts
 ```
 
 ### 프로젝트 실행 방법
