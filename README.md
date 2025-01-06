@@ -301,37 +301,41 @@ UNIQUE INDEX idx_product_variant_unique ON product_variant(product_id, option_na
 - Edit URL: https://www.mermaidchart.com/app/projects/61b24fd9-39ad-4447-b860-aa6c8c03bb75/diagrams/f1c3fc0d-60a4-4c0e-b8c4-992ad4f90d77/version/v0.1/edit
 ### 쿠폰 관련
 #### 선착순 쿠폰 조회
-![alt text](<images/sequence diagram-1.png>)
+![alt text](<images/sequence_diagram/선착순쿠폰조회.png>)
 #### 선착순 쿠폰 발급
-![alt text](<images/sequence diagram-2_1.png>)
+![alt text](<images/sequence_diagram/선착순쿠폰발급.png>)
 #### 유저의 쿠폰 목록 조회
-![alt text](<images/sequence diagram-3.png>)
+![alt text](<images/sequence_diagram/유저쿠폰목록조회.png>)
+
 ### 잔액 관련
 #### 유저 잔액 조회
-![alt text](<images/sequence diagram-5.png>)
+![alt text](<images/sequence_diagram/유저잔액조회.png>)
 #### 유저 잔액 충전
-![alt text](<images/sequence diagram-4_1.png>)
+![alt text](<images/sequence_diagram/유저잔액충전.png>)
+
 ### 통계 관련
 #### 인기 상품 조회
-![alt text](<images/sequence diagram-6.png>)
+![alt text](<images/sequence_diagram/인기상품조회.png>)
+
 ### 장바구니 관련
-#### 유저 장바구니 조회
-![alt text](<images/sequence diagram-10.png>)
-#### 유저 장바구니 상품 추가
-![alt text](<images/sequence diagram-11.png>)
-#### 유저 장바구니 상품 수량 변경
-![alt text](<images/sequence diagram-12.png>)
-#### 유저 장바구니 상품 삭제
-![alt text](<images/sequence diagram-13.png>)
-#### 유저 장바구니 상품 주문
-![alt text](<images/sequence diagram-14_2.png>)
+#### 장바구니 조회
+![alt text](<images/sequence_diagram/장바구니조회.png>)
+#### 장바구니 상품 추가
+![alt text](<images/sequence_diagram/장바구니상품추가.png>)
+#### 장바구니 상품 수량 변경
+![alt text](<images/sequence_diagram/장바구니상품수량변경.png>)
+#### 장바구니 상품 삭제
+![alt text](<images/sequence_diagram/장바구니상품삭제.png>)
+#### 장바구니 상품 주문
+![alt text](<images/sequence_diagram/장바구니상품주문.png>)
+
 ### 상품 관련
 #### 상품 정보 조회
-![alt text](<images/sequence diagram-7.png>)
+![alt text](<images/sequence_diagram/상품정보조회.png>)
 #### 상품 주문 생성
-![alt text](<images/sequence diagram-8_3.png>)
+![alt text](<images/sequence_diagram/상품주문생성.png>)
 #### 상품 결제 진행
-![alt text](<images/sequence diagram-9.png>)
+![alt text](<images/sequence_diagram/상품결제진행.png>)
 
 ## Mock API 생성
 ### Swagger API Docs
