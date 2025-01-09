@@ -22,11 +22,8 @@
         "transform": "typia/lib/transform",
         "include": ["src/**/*.ts"]
       }
-    ],
-    "compilerOptions": {
-      "experimentalDecorators": true,
-      "emitDecoratorMetadata": true,
-      "skipLibCheck": true
-    }
-  }
+    ]
+  },
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
