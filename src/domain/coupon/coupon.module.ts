@@ -13,6 +13,6 @@ import { COUPON_REPOSITORY } from 'src/common/constants/repository.constants';
         },
         PrismaService, // DB 접근
     ],
-    exports: [CouponService], // 다른 모듈에서 사용할 수 있도록 내보냄
+    exports: [CouponService, COUPON_REPOSITORY], // 다른 모듈에서 사용할 수 있도록 내보냄
 })
 export class CouponModule {}

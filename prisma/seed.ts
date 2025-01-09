@@ -11,7 +11,6 @@ async function main() {
             { name: '김종협', email: 'jong@gmail.com', createdAt: new Date(), updatedAt: new Date() },
         ],
     });
-
     console.log('Created users:', users);
 
     // 쿠폰 데이터 생성
@@ -37,7 +36,6 @@ async function main() {
             },
         ],
     });
-
     console.log('Created coupons:', coupons);
 
     // 선착순 쿠폰 데이터 생성
@@ -61,7 +59,6 @@ async function main() {
             },
         ],
     });
-
     console.log('Created FCFS coupons:', fcfsCoupons);
 
     // 상품 데이터 생성
@@ -93,8 +90,17 @@ async function main() {
             },
         ],
     });
-
     console.log('Created products:', products);
+
+    // 유저 잔액 데이터 생성
+    const balances = await prisma.userBalance.createMany({
+        data: [
+            { userId: 1, balance: 10000, updatedAt: new Date() },
+            { userId: 2, balance: 5000, updatedAt: new Date() },
+            { userId: 3, balance: 20000, updatedAt: new Date() },
+        ],
+    });
+    console.log('Created balances:', balances);
 }
 
 main()

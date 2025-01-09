@@ -1,3 +1,6 @@
-export const COUPON_REPOSITORY = Symbol('CouponRepository');
-export const ORDER_REPOSITORY = Symbol('OrderRepository');
-export const USER_REPOSITORY = Symbol('UserRepository');
+
+export const COUPON_REPOSITORY = Symbol('COUPON_REPOSITORY');
+export const PRODUCT_REPOSITORY = Symbol('PRODUCT_REPOSITORY');
+export const ORDER_REPOSITORY = Symbol('ORDER_REPOSITORY');
+export const PAYMENT_REPOSITORY = Symbol('PAYMENT_REPOSITORY');
+export const BALANCE_REPOSITORY = Symbol('BALANCE_REPOSITORY');
