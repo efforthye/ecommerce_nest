@@ -8,9 +8,15 @@ import { CartController } from "./interfaces/controllers/cart/cart.controller";
 import { TestController } from "./interfaces/controllers/test/test.controller";
 import { CouponModule } from "./domain/coupon/coupon.module";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
+import { ProductModule } from "./domain/product/product.module";
+import { ProductService } from "./domain/product/service/product.service";
+import { CouponService } from "./domain/coupon/service/coupon.service";
+import { PRODUCT_REPOSITORY } from "./common/constants/repository.constants";
+import { BalanceModule } from "./domain/balance/balance.module";
+import { BalanceService } from "./domain/balance/service/balance.service";
 
 @Module({
-  imports: [DatabaseModule, CouponModule],
+  imports: [DatabaseModule, CouponModule, ProductModule, BalanceModule],
   controllers: [
     CouponController,
     BalanceController,
@@ -21,6 +27,8 @@ import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
   ],
   providers: [
     JwtAuthGuard,
+    CouponService,
+    BalanceService
   ],
 })
 export class AppModule {}
