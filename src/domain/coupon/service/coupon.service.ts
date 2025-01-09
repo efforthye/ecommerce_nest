@@ -9,7 +9,6 @@ import { PrismaService } from 'src/infrastructure/database/prisma.service';
 
 @Injectable()
 export class CouponService {
-    getMyCoupons: any;
     constructor(
         @Inject(COUPON_REPOSITORY)
         private readonly couponRepository: CouponRepository,
@@ -29,7 +28,7 @@ export class CouponService {
         return coupon;
     }
     
-    
+    // 선착순 쿠폰 발급
     @PessimisticLock()
     async issueFcfsCoupon(userId: number, fcfsCouponId: number): Promise<UserCoupon> {
         return await this.prisma.$transaction(async (tx) => {
@@ -68,6 +67,13 @@ export class CouponService {
                 tx
             );
         });
+    }
+
+
+    // 유저 쿠폰 목록 조회
+    async getMyCoupons(userId: number, pagination: PaginationDto): Promise<{ data: UserCoupon[]; total: number }> {
+        const [coupons, total] = await this.couponRepository.findUserCoupons(userId, pagination);
+        return { data: coupons, total };
     }
     
 }

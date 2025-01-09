@@ -67,21 +67,26 @@ export class CouponController {
     /**
      * 사용자가 보유한 쿠폰 목록 조회
      */
-    @ApiOperation({ summary: '사용자 보유 쿠폰 목록 조회' })
+    @ApiOperation({ summary: '사용자가 보유한 쿠폰 목록 조회' })
+    @ApiQuery({ name: 'userId', required: true, description: '사용자 ID' })
     @ApiQuery({ name: 'page', required: false, description: '페이지 번호' })
     @ApiQuery({ name: 'pageSize', required: false, description: '페이지당 항목 수' })
-    @ApiQuery({ name: 'userId', required: true, description: '사용자 ID' }) // userId를 요청 쿼리에서 받음
     @ApiResponse({ status: 200, description: '사용자 쿠폰 목록 조회 성공' })
-    @Get("my")
+    @Get('my')
     async getMyCoupons(
-        @Headers("authorization") authHeader: string,
-        @Query("userId") userId: number, // userId를 쿼리에서 받음
-        @Query() pagination: PaginationDto,
+        @Query('userId') userId: number,
+        @Query('page') page?: number,
+        @Query('limit') limit?: number,
     ): Promise<any> {
-        if (!authHeader) throw new BadRequestException("Missing authorization header");
-        if (!userId) throw new BadRequestException("User ID is required");
+        if (!userId) {
+            throw new BadRequestException('User ID is required');
+        }
 
-        // 실제 사용자 쿠폰 목록 조회 로직 호출
+        // PaginationDto 객체 생성
+        const pagination = new PaginationDto();
+        pagination.page = page || 1;
+        pagination.limit = limit || 10;
+
         return this.couponService.getMyCoupons(userId, pagination);
     }
 
