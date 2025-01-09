@@ -14,9 +14,16 @@ import { CouponService } from "./domain/coupon/service/coupon.service";
 import { PRODUCT_REPOSITORY } from "./common/constants/repository.constants";
 import { BalanceModule } from "./domain/balance/balance.module";
 import { BalanceService } from "./domain/balance/service/balance.service";
+import { OrderModule } from "./domain/order/order.module";
 
 @Module({
-  imports: [DatabaseModule, CouponModule, ProductModule, BalanceModule],
+  imports: [
+    DatabaseModule, 
+    CouponModule, 
+    ProductModule, 
+    BalanceModule,
+    OrderModule,
+  ],
   controllers: [
     CouponController,
     BalanceController,
