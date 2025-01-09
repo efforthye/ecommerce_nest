@@ -9,10 +9,12 @@ export class ProductController {
     constructor(private readonly productService: ProductService) {}
 
     @ApiOperation({ summary: '인기 상품 목록 조회' })
+    @ApiQuery({ name: 'page', required: false, description: '페이지' })
     @ApiQuery({ name: 'limit', required: false, description: '조회할 상품 수' })
     @ApiResponse({ status: 200, description: '인기 상품 목록 조회 성공' })
     @Get('popular')
     async getPopularProducts(
+        @Query('page') page: string,
         @Query('limit') limit: string
     ): Promise<ProductResponseDto[]> {
         return this.productService.getPopularProducts(Number(limit) || 10);
