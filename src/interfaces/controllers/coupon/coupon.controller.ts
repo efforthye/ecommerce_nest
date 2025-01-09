@@ -3,8 +3,11 @@ import { CouponService } from "src/domain/coupon/service/coupon.service";
 import { IssueCouponResponse } from "src/domain/coupon/dto/issue_coupon_response.dto";
 import { FcfsCouponDetailResponse } from "src/domain/coupon/dto/fcfs-coupon-detail.dto";
 import { CouponPageResponse } from "src/domain/coupon/dto/coupon_page_response.dto";
-import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { Controller, Get, Param, Post, Query } from "@nestjs/common";
+import { ApiHeader, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { BadRequestException, Body, Controller, Get, Headers, Param, Post, Query, UseGuards } from "@nestjs/common";
+import { UserAccount, UserCoupon } from "@prisma/client";
+import { CurrentUser } from "src/common/decorators/current-user.decorator";
+import { JwtAuthGuard } from "src/common/guards/jwt-auth.guard";
 
 @ApiTags('쿠폰')
 @Controller("coupons")
@@ -15,20 +18,9 @@ export class CouponController {
      * 선착순 쿠폰 목록 조회
      */
     @ApiOperation({ summary: '선착순 쿠폰 목록 조회' })
-    @ApiQuery({ 
-      name: 'page', 
-      required: false, 
-      description: '페이지 번호' 
-    })
-    @ApiQuery({ 
-      name: 'pageSize', 
-      required: false, 
-      description: '페이지당 항목 수' 
-    })
-    @ApiResponse({ 
-      status: 200, 
-      description: '쿠폰 목록 조회 성공' 
-    })
+    @ApiQuery({name: 'page', required: false, description: '페이지 번호'})
+    @ApiQuery({name: 'pageSize', required: false, description: '페이지당 항목 수' })
+    @ApiResponse({status: 200, description: '쿠폰 목록 조회 성공'})
     @Get("fcfs")
     async getAvailableFcfsCoupons(
         @Query() pagination: PaginationDto
@@ -40,14 +32,8 @@ export class CouponController {
      * 특정 선착순 쿠폰 정보 조회
      */
     @ApiOperation({ summary: '특정 선착순 쿠폰 정보 조회' })
-    @ApiParam({ 
-      name: 'id', 
-      description: '쿠폰 ID' 
-    })
-    @ApiResponse({ 
-      status: 200, 
-      description: '쿠폰 상세 정보 조회 성공' 
-    })
+    @ApiParam({name: 'id', description: '쿠폰 ID'})
+    @ApiResponse({status: 200, description: '쿠폰 상세 정보 조회 성공'})
     @Get("fcfs/:id")
     async getFcfsCouponDetail(
         @Param("id") id: number
@@ -55,80 +41,48 @@ export class CouponController {
         return this.couponService.getFcfsCouponById(id);
     }
 
+    
+
     /**
-     * 선착순 쿠폰 발급 (Mock 데이터)
+     * 선착순 쿠폰 발급
      */
     @ApiOperation({ summary: '선착순 쿠폰 발급' })
-    @ApiParam({ 
-      name: 'id', 
-      description: '쿠폰 ID' 
-    })
-    @ApiResponse({ 
-      status: 200, 
-      description: '쿠폰 발급 성공' 
-    })
+    @ApiParam({ name: 'id', description: '쿠폰 ID' })
+    @ApiResponse({ status: 200, description: '쿠폰 발급 성공' })
+    // @UseGuards(JwtAuthGuard)
     @Post("fcfs/:id/issue")
     async issueCoupon(
-      @Param("id") id: number
-    ): Promise<IssueCouponResponse> {
-        // Mock 데이터 반환
-        return {
-            id: 1,
-            userId: 1,
-            couponId: id,
-            status: "AVAILABLE",
-            expiryDate: new Date("2024-02-01T23:59:59Z"),
-            createdAt: new Date("2024-01-01T00:00:00Z"),
-            usedAt: null,
-        };
+        @Headers("authorization") authHeader: string,
+        @Param("id") id: number,
+        @Body("userId") userId: number,
+    ): Promise<UserCoupon> {
+        if (!authHeader) { // 임시로 헤더로 처리함
+            throw new BadRequestException("Invalid or missing authorization token");
+        }
+
+        // 실제 발급 로직 호출
+        return this.couponService.issueFcfsCoupon(userId, id);
     }
 
     /**
-     * 사용자가 보유한 쿠폰 목록 조회 (Mock 데이터)
+     * 사용자가 보유한 쿠폰 목록 조회
      */
     @ApiOperation({ summary: '사용자 보유 쿠폰 목록 조회' })
-    @ApiQuery({ 
-      name: 'page', 
-      required: false, 
-      description: '페이지 번호' 
-    })
-    @ApiQuery({ 
-      name: 'pageSize', 
-      required: false, 
-      description: '페이지당 항목 수' 
-    })
-    @ApiResponse({ 
-      status: 200, 
-      description: '사용자 쿠폰 목록 조회 성공' 
-    })
+    @ApiQuery({ name: 'page', required: false, description: '페이지 번호' })
+    @ApiQuery({ name: 'pageSize', required: false, description: '페이지당 항목 수' })
+    @ApiQuery({ name: 'userId', required: true, description: '사용자 ID' }) // userId를 요청 쿼리에서 받음
+    @ApiResponse({ status: 200, description: '사용자 쿠폰 목록 조회 성공' })
     @Get("my")
     async getMyCoupons(
-      @Query() pagination: PaginationDto
-    ) {
-        // Mock 데이터 반환
-        return {
-            data: [
-                {
-                    id: 1,
-                    userId: 1,
-                    couponId: 101,
-                    coupon: {
-                        id: 101,
-                        name: "신규가입 할인 쿠폰",
-                        type: "PERCENTAGE",
-                        amount: 10.0,
-                        minOrderAmount: 10000,
-                        validDays: 30,
-                        isFcfs: true,
-                        createdAt: new Date("2024-01-01T00:00:00Z"),
-                    },
-                    status: "AVAILABLE",
-                    expiryDate: new Date("2024-02-01T23:59:59Z"),
-                    createdAt: new Date("2024-01-01T00:00:00Z"),
-                    usedAt: null,
-                },
-            ],
-            total: 1,
-        };
+        @Headers("authorization") authHeader: string,
+        @Query("userId") userId: number, // userId를 쿼리에서 받음
+        @Query() pagination: PaginationDto,
+    ): Promise<any> {
+        if (!authHeader) throw new BadRequestException("Missing authorization header");
+        if (!userId) throw new BadRequestException("User ID is required");
+
+        // 실제 사용자 쿠폰 목록 조회 로직 호출
+        return this.couponService.getMyCoupons(userId, pagination);
     }
+
 }

@@ -7,6 +7,7 @@ import { OrderController } from "./interfaces/controllers/order/order.controller
 import { CartController } from "./interfaces/controllers/cart/cart.controller";
 import { TestController } from "./interfaces/controllers/test/test.controller";
 import { CouponModule } from "./domain/coupon/coupon.module";
+import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 
 @Module({
   imports: [DatabaseModule, CouponModule],
@@ -18,6 +19,8 @@ import { CouponModule } from "./domain/coupon/coupon.module";
     CartController,
     TestController
   ],
-  providers: [],
+  providers: [
+    JwtAuthGuard,
+  ],
 })
 export class AppModule {}

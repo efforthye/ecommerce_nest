@@ -4,20 +4,31 @@ import { CouponService } from 'src/domain/coupon/service/coupon.service';
 import { CouponRepository } from 'src/domain/coupon/repository/coupon.repository';
 import { COUPON_REPOSITORY } from 'src/common/constants/repository.constants';
 import { PaginationDto } from 'src/domain/coupon/dto/pagination.dto';
-import { NotFoundException } from '@nestjs/common';
-import { getPrismaClient } from '../util';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { FcfsCouponWithCoupon } from 'src/domain/coupon/types/coupon.types';
+import { CouponStatus } from '@prisma/client';
 
 describe('선착순 쿠폰 서비스 테스트', () => {
     let couponService: CouponService;
     let mockCouponRepository: jest.Mocked<CouponRepository>;
-    const prisma = getPrismaClient();
+    let mockPrismaService: jest.Mocked<PrismaService>;
 
     beforeEach(async () => {
         // 각 테스트 전에 Repository mock 초기화
         mockCouponRepository = {
             findAvailableFcfsCoupons: jest.fn(),
             findFcfsCouponById: jest.fn(),
+            findFcfsCouponWithLock: jest.fn(),
+            decreaseFcfsCouponStock: jest.fn(),
+            createUserCoupon: jest.fn(),
+            findUserCoupons: jest.fn(),
+            findExistingUserCoupon: jest.fn()
         };
+
+        mockPrismaService = {
+            $transaction: jest.fn(callback => callback(mockPrismaService))
+        } as any;
 
         // 테스트 모듈 설정
         const moduleRef = await Test.createTestingModule({
@@ -26,32 +37,20 @@ describe('선착순 쿠폰 서비스 테스트', () => {
                     provide: COUPON_REPOSITORY,
                     useValue: mockCouponRepository
                 },
+                {
+                    provide: PrismaService,
+                    useValue: mockPrismaService
+                },
                 CouponService
             ],
         }).compile();
 
         couponService = moduleRef.get<CouponService>(CouponService);
-
-        // mock 반환값 초기화
-        mockCouponRepository.findAvailableFcfsCoupons.mockReset();
-        mockCouponRepository.findFcfsCouponById.mockReset();
     });
 
     afterEach(() => {
-        // 각 테스트 후에 mock이 예상한 횟수만큼만 호출되었는지 검증
-        expect(mockCouponRepository.findAvailableFcfsCoupons).toHaveBeenCalledTimes(
-            mockCouponRepository.findAvailableFcfsCoupons.mock.calls.length
-        );
-        expect(mockCouponRepository.findFcfsCouponById).toHaveBeenCalledTimes(
-            mockCouponRepository.findFcfsCouponById.mock.calls.length
-        );
-
         // mock 함수들 초기화
         jest.clearAllMocks();
-    });
-
-    afterAll(async () => {
-        await prisma.$disconnect();
     });
 
     describe('사용 가능한 선착순 쿠폰 목록 조회 (getAvailableFcfsCoupons)', () => {
@@ -168,4 +167,117 @@ describe('선착순 쿠폰 서비스 테스트', () => {
             expect(mockCouponRepository.findFcfsCouponById).toHaveBeenCalledWith(nonExistentCouponId);
         });
     });
+
+    describe('선착순 쿠폰 발급 (issueFcfsCoupon)', () => {
+        let now: Date;
+    
+        beforeEach(() => {
+            // 테스트용 현재 시간 고정
+            now = new Date('2024-01-10T00:00:00Z');
+            jest.useFakeTimers();
+            jest.setSystemTime(now);
+        });
+    
+        afterEach(() => {
+            jest.useRealTimers();
+        });
+    
+        it('정상적인 쿠폰 발급 - 발급된 쿠폰 정보를 반환한다', async () => {
+            // given
+            const userId = 1;
+            const fcfsCouponId = 1;
+            const mockFcfsCoupon: FcfsCouponWithCoupon = {
+                id: fcfsCouponId,
+                couponId: 1,
+                totalQuantity: 100,
+                stockQuantity: 50,
+                startDate: new Date('2024-01-01T00:00:00Z'), // 현재보다 이전 날짜
+                endDate: new Date('2024-12-31T23:59:59Z'),   // 현재보다 이후 날짜
+                createdAt: new Date('2024-01-01T00:00:00Z'),
+                coupon: {
+                    id: 1,
+                    name: '테스트 쿠폰',
+                    type: 'PERCENTAGE',
+                    amount: 10,
+                    minOrderAmount: 1000,
+                    validDays: 30,
+                    isFcfs: true,
+                    createdAt: new Date('2024-01-01T00:00:00Z')
+                }
+            };
+    
+            const mockUserCoupon = {
+                id: 1,
+                userId,
+                couponId: 1,
+                status: CouponStatus.AVAILABLE,
+                expiryDate: new Date('2024-02-09T23:59:59Z'),
+                createdAt: now,
+                usedAt: null
+            };
+    
+            mockCouponRepository.findFcfsCouponWithLock.mockResolvedValue(mockFcfsCoupon);
+            mockCouponRepository.createUserCoupon.mockResolvedValue(mockUserCoupon);
+    
+            // when
+            const result = await couponService.issueFcfsCoupon(userId, fcfsCouponId);
+    
+            // then
+            expect(mockPrismaService.$transaction).toHaveBeenCalled();
+            expect(mockCouponRepository.findFcfsCouponWithLock).toHaveBeenCalledWith(
+                fcfsCouponId,
+                expect.any(Object)
+            );
+            expect(mockCouponRepository.decreaseFcfsCouponStock).toHaveBeenCalledWith(
+                fcfsCouponId,
+                expect.any(Object)
+            );
+            expect(mockCouponRepository.createUserCoupon).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userId,
+                    couponId: mockFcfsCoupon.couponId,
+                    status: CouponStatus.AVAILABLE
+                }),
+                expect.any(Object)
+            );
+            expect(result).toEqual(mockUserCoupon);
+        });
+    
+        it('발급 기간이 아닌 경우 - BadRequestException을 발생시킨다', async () => {
+            // given
+            const mockCoupon: FcfsCouponWithCoupon = {
+                id: 1,
+                couponId: 1,
+                totalQuantity: 100,
+                stockQuantity: 50,
+                startDate: new Date('2025-01-01T00:00:00Z'),  // 현재보다 미래 날짜
+                endDate: new Date('2025-12-31T23:59:59Z'),
+                createdAt: now,
+                coupon: {
+                    id: 1,
+                    name: '테스트 쿠폰',
+                    type: 'PERCENTAGE',
+                    amount: 10,
+                    minOrderAmount: 1000,
+                    validDays: 30,
+                    isFcfs: true,
+                    createdAt: now
+                }
+            };
+            mockCouponRepository.findFcfsCouponWithLock.mockResolvedValue(mockCoupon);
+    
+            // when & then
+            await expect(couponService.issueFcfsCoupon(1, 1))
+                .rejects
+                .toThrow(BadRequestException);
+            
+            expect(mockCouponRepository.findFcfsCouponWithLock).toHaveBeenCalledWith(
+                1,
+                expect.any(Object)
+            );
+            expect(mockCouponRepository.decreaseFcfsCouponStock).not.toHaveBeenCalled();
+            expect(mockCouponRepository.createUserCoupon).not.toHaveBeenCalled();
+        });
+    });
+
 });

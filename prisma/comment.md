@@ -5,3 +5,6 @@
 
 ### 프리즈마 클라이언트 자동 생성
 `prisma generate`
+
+### 초기 데이터 생성
+`npm run seed`
