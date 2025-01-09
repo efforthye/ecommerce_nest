@@ -15,6 +15,9 @@ import { PRODUCT_REPOSITORY } from "./common/constants/repository.constants";
 import { BalanceModule } from "./domain/balance/balance.module";
 import { BalanceService } from "./domain/balance/service/balance.service";
 import { OrderModule } from "./domain/order/order.module";
+import { PaymentModule } from "./domain/payment/payment.module";
+import { PaymentController } from "./interfaces/controllers/payment/payment.controller";
+import { PaymentService } from "./domain/payment/service/payment.service";
 
 @Module({
   imports: [
@@ -23,6 +26,7 @@ import { OrderModule } from "./domain/order/order.module";
     ProductModule, 
     BalanceModule,
     OrderModule,
+    PaymentModule,
   ],
   controllers: [
     CouponController,
@@ -30,7 +34,8 @@ import { OrderModule } from "./domain/order/order.module";
     ProductController,
     OrderController,
     CartController,
-    TestController
+    TestController,
+    PaymentController,
   ],
   providers: [
     JwtAuthGuard,

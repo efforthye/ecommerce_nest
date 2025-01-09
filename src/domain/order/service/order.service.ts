@@ -12,6 +12,7 @@ export class OrderService {
         private readonly prisma: PrismaService,
     ) {}
 
+    // 주문 생성
     async createOrder(userId: number, totalAmount: number, discountAmount: number, finalAmount: number) {
         return this.prisma.$transaction(async (tx) => {
             return this.orderRepository.createOrder({
@@ -27,7 +28,13 @@ export class OrderService {
         });
     }
 
+    // 주문 상태 업데이트
     async updateOrderStatus(orderId: number, status: string) {
         return this.orderRepository.updateOrderStatus(orderId, status);
+    }
+
+    // 주문 조회
+    async findOrderById(orderId: number) {
+        return this.orderRepository.findOrderById(orderId);
     }
 }
