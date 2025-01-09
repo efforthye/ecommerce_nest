@@ -1,150 +1,134 @@
-import { Controller, Get, Param, Post, ParseIntPipe, Query } from "@nestjs/common";
-import { ApiOperation, ApiTags, ApiResponse, ApiParam, ApiQuery } from "@nestjs/swagger";
 import { PaginationDto } from "src/domain/coupon/dto/pagination.dto";
 import { CouponService } from "src/domain/coupon/service/coupon.service";
+import { IssueCouponResponse } from "src/domain/coupon/dto/issue_coupon_response.dto";
+import { FcfsCouponDetailResponse } from "src/domain/coupon/dto/fcfs-coupon-detail.dto";
+import { CouponPageResponse } from "src/domain/coupon/dto/coupon_page_response.dto";
+import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { Controller, Get, Param, Post, Query } from "@nestjs/common";
 
-@Controller('coupons')
-@ApiTags('쿠폰 API')
+@ApiTags('쿠폰')
+@Controller("coupons")
 export class CouponController {
-    constructor(
-        private readonly couponService: CouponService
-    ) {}
+    constructor(private readonly couponService: CouponService) {}
 
-    @Get('fcfs/:id')
-    @ApiOperation({
-        summary: '선착순 쿠폰 조회',
-        description: '특정 선착순 쿠폰의 상세 정보를 조회합니다.'
+    /**
+     * 선착순 쿠폰 목록 조회
+     */
+    @ApiOperation({ summary: '선착순 쿠폰 목록 조회' })
+    @ApiQuery({ 
+      name: 'page', 
+      required: false, 
+      description: '페이지 번호' 
     })
-    @ApiParam({
-        name: 'id',
-        type: 'number',
-        description: '선착순 쿠폰 ID'
+    @ApiQuery({ 
+      name: 'pageSize', 
+      required: false, 
+      description: '페이지당 항목 수' 
     })
-    @ApiResponse({
-        status: 200,
-        description: '선착순 쿠폰 정보를 반환합니다.',
-        schema: {
-            example: {
-                id: 1,
-                couponId: 1,
-                coupon: {
-                    id: 1,
-                    name: '신규가입 할인 쿠폰',
-                    type: 'PERCENTAGE',
-                    amount: 10.00,
-                    minOrderAmount: 10000,
-                    validDays: 30,
-                    isFcfs: true,
-                    createdAt: '2024-01-01T00:00:00Z'
-                },
-                totalQuantity: 100,
-                stockQuantity: 45,
-                startDate: '2024-01-01T00:00:00Z',
-                endDate: '2024-01-31T23:59:59Z',
-                createdAt: '2024-01-01T00:00:00Z'
-            }
-        }
+    @ApiResponse({ 
+      status: 200, 
+      description: '쿠폰 목록 조회 성공' 
     })
-    @ApiResponse({
-        status: 404,
-        description: '해당 쿠폰을 찾을 수 없습니다.',
-        schema: {
-            example: {
-                statusCode: 404,
-                message: "Coupon not found",
-                error: "Not Found"
-            }
-        }
+    @Get("fcfs")
+    async getAvailableFcfsCoupons(
+        @Query() pagination: PaginationDto
+    ): Promise<CouponPageResponse> {
+        return this.couponService.getAvailableFcfsCoupons(pagination);
+    }
+
+    /**
+     * 특정 선착순 쿠폰 정보 조회
+     */
+    @ApiOperation({ summary: '특정 선착순 쿠폰 정보 조회' })
+    @ApiParam({ 
+      name: 'id', 
+      description: '쿠폰 ID' 
     })
-    async findFcfsCoupon(@Param('id', ParseIntPipe) id: number) {
+    @ApiResponse({ 
+      status: 200, 
+      description: '쿠폰 상세 정보 조회 성공' 
+    })
+    @Get("fcfs/:id")
+    async getFcfsCouponDetail(
+        @Param("id") id: number
+    ): Promise<FcfsCouponDetailResponse> {
         return this.couponService.getFcfsCouponById(id);
     }
 
-    @Post('fcfs/:id/issue')
-    @ApiOperation({
-        summary: '선착순 쿠폰 발급',
-        description: '사용자에게 선착순 쿠폰을 발급합니다.'
+    /**
+     * 선착순 쿠폰 발급 (Mock 데이터)
+     */
+    @ApiOperation({ summary: '선착순 쿠폰 발급' })
+    @ApiParam({ 
+      name: 'id', 
+      description: '쿠폰 ID' 
     })
-    @ApiParam({
-        name: 'id',
-        type: 'number',
-        description: '선착순 쿠폰 ID'
+    @ApiResponse({ 
+      status: 200, 
+      description: '쿠폰 발급 성공' 
     })
-    @ApiResponse({
-        status: 201,
-        description: '선착순 쿠폰 발급 성공',
-        schema: {
-            example: {
-                id: 1,
-                userId: 1,
-                couponId: 1,
-                status: 'AVAILABLE',
-                expiryDate: '2024-02-01T23:59:59Z',
-                createdAt: '2024-01-01T00:00:00Z',
-                usedAt: null
-            }
-        }
-    })
-    @ApiResponse({
-        status: 409,
-        description: '선착순 쿠폰 발급 실패',
-        schema: {
-            example: {
-                statusCode: 409,
-                message: "Coupon issuance failed: insufficient stock quantity",
-                error: "Conflict"
-            }
-        }
-    })
-    // async issueCoupon(@Param('id', ParseIntPipe) id: number) {
-    //     return this.couponService.issueCoupon(id);
-    // }
+    @Post("fcfs/:id/issue")
+    async issueCoupon(
+      @Param("id") id: number
+    ): Promise<IssueCouponResponse> {
+        // Mock 데이터 반환
+        return {
+            id: 1,
+            userId: 1,
+            couponId: id,
+            status: "AVAILABLE",
+            expiryDate: new Date("2024-02-01T23:59:59Z"),
+            createdAt: new Date("2024-01-01T00:00:00Z"),
+            usedAt: null,
+        };
+    }
 
-    @Get('my')
-    @ApiOperation({
-        summary: '보유 쿠폰 목록 조회',
-        description: '사용자가 보유한 쿠폰 목록을 조회합니다.'
+    /**
+     * 사용자가 보유한 쿠폰 목록 조회 (Mock 데이터)
+     */
+    @ApiOperation({ summary: '사용자 보유 쿠폰 목록 조회' })
+    @ApiQuery({ 
+      name: 'page', 
+      required: false, 
+      description: '페이지 번호' 
     })
-    @ApiQuery({
-        name: 'page',
-        type: 'number',
-        required: false,
-        description: '페이지 번호 (기본값: 1)'
+    @ApiQuery({ 
+      name: 'pageSize', 
+      required: false, 
+      description: '페이지당 항목 수' 
     })
-    @ApiQuery({
-        name: 'limit',
-        type: 'number',
-        required: false,
-        description: '페이지당 항목 수 (기본값: 10, 최대: 100)'
+    @ApiResponse({ 
+      status: 200, 
+      description: '사용자 쿠폰 목록 조회 성공' 
     })
-    @ApiResponse({
-        status: 200,
-        description: '사용자가 보유한 쿠폰 목록을 반환합니다.',
-        schema: {
-            example: [
+    @Get("my")
+    async getMyCoupons(
+      @Query() pagination: PaginationDto
+    ) {
+        // Mock 데이터 반환
+        return {
+            data: [
                 {
                     id: 1,
                     userId: 1,
-                    couponId: 1,
+                    couponId: 101,
                     coupon: {
-                        id: 1,
-                        name: '신규가입 할인 쿠폰',
-                        type: 'PERCENTAGE',
-                        amount: 10.00,
+                        id: 101,
+                        name: "신규가입 할인 쿠폰",
+                        type: "PERCENTAGE",
+                        amount: 10.0,
                         minOrderAmount: 10000,
                         validDays: 30,
                         isFcfs: true,
-                        createdAt: '2024-01-01T00:00:00Z'
+                        createdAt: new Date("2024-01-01T00:00:00Z"),
                     },
-                    status: 'AVAILABLE',
-                    expiryDate: '2024-02-01T23:59:59Z',
-                    createdAt: '2024-01-01T00:00:00Z',
-                    usedAt: null
-                }
-            ]
-        }
-    })
-    async getMyCoupons(@Query() pagination: PaginationDto) {
-        return this.couponService.getMyCoupons(pagination);
+                    status: "AVAILABLE",
+                    expiryDate: new Date("2024-02-01T23:59:59Z"),
+                    createdAt: new Date("2024-01-01T00:00:00Z"),
+                    usedAt: null,
+                },
+            ],
+            total: 1,
+        };
     }
 }

@@ -6,9 +6,10 @@ import { ProductController } from "./interfaces/controllers/product/product.cont
 import { OrderController } from "./interfaces/controllers/order/order.controller";
 import { CartController } from "./interfaces/controllers/cart/cart.controller";
 import { TestController } from "./interfaces/controllers/test/test.controller";
+import { CouponModule } from "./domain/coupon/coupon.module";
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, CouponModule],
   controllers: [
     CouponController,
     BalanceController,
