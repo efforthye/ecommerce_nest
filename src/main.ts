@@ -2,12 +2,23 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { PrismaClient } from '@prisma/client';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Prisma Client 초기화
   const prisma = new PrismaClient();
+
+  // 전역 파이프라인 정의
+  app.useGlobalPipes(new ValidationPipe({ 
+    // 클라이언트로부터 받은 데이터를 자동으로 DTO에 정의된 타입으로 변환
+    transform: true, 
+    // DTO에 정의되지 않은 속성은 제거
+    whitelist: true, 
+    // DTO에 정의되지 않은 속성이 포함되어 있으면 요청 자체를 거부
+    forbidNonWhitelisted: true, 
+  }));
 
   // Prisma와 데이터베이스 연결 확인
   try {

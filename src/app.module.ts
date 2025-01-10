@@ -6,17 +6,41 @@ import { ProductController } from "./interfaces/controllers/product/product.cont
 import { OrderController } from "./interfaces/controllers/order/order.controller";
 import { CartController } from "./interfaces/controllers/cart/cart.controller";
 import { TestController } from "./interfaces/controllers/test/test.controller";
+import { CouponModule } from "./domain/coupon/coupon.module";
+import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
+import { ProductModule } from "./domain/product/product.module";
+import { ProductService } from "./domain/product/service/product.service";
+import { CouponService } from "./domain/coupon/service/coupon.service";
+import { PRODUCT_REPOSITORY } from "./common/constants/repository.constants";
+import { BalanceModule } from "./domain/balance/balance.module";
+import { BalanceService } from "./domain/balance/service/balance.service";
+import { OrderModule } from "./domain/order/order.module";
+import { PaymentModule } from "./domain/payment/payment.module";
+import { PaymentController } from "./interfaces/controllers/payment/payment.controller";
+import { PaymentService } from "./domain/payment/service/payment.service";
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [
+    DatabaseModule, 
+    CouponModule, 
+    ProductModule, 
+    BalanceModule,
+    OrderModule,
+    PaymentModule,
+  ],
   controllers: [
     CouponController,
     BalanceController,
     ProductController,
     OrderController,
     CartController,
-    TestController
+    TestController,
+    PaymentController,
   ],
-  providers: [],
+  providers: [
+    JwtAuthGuard,
+    CouponService,
+    BalanceService
+  ],
 })
 export class AppModule {}

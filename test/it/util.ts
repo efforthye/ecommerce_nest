@@ -1,26 +1,17 @@
-import {DataSource} from "typeorm";
-import * as process from "process";
+import { PrismaClient } from '@prisma/client';
 
-let datasource: DataSource;
+let prisma: PrismaClient;
 
-export const getDatasource = async () => {
-    if (datasource) {
-        return datasource;
-    }
-    datasource = new DataSource({
-        type: "mysql",
-        host: process.env.DB_HOST,
-        port: Number(process.env.DB_PORT),
-        database: process.env.DB_DATABASE,
-        username: process.env.DB_USERNAME,
-        password: process.env.DB_PASSWORD,
-        migrations: [`migrations/*`],
-        logging: true,
-        entities: [`**/*.entity.ts`],
-        relationLoadStrategy: "join",
+export const getPrismaClient = () => {
+  if (!prisma) {
+    prisma = new PrismaClient({
+      datasources: {
+        db: {
+          url: `mysql://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_DATABASE}`
+        },
+      },
+      log: ['query', 'info', 'warn', 'error'],
     });
-    await datasource.initialize();
-    return datasource;
+  }
+  return prisma;
 };
-
-
