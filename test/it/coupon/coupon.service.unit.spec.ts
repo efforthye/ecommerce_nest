@@ -71,13 +71,13 @@ describe('선착순 쿠폰 서비스 테스트', () => {
                     minOrderAmount: 10000,
                     validDays: 30,
                     isFcfs: true,
-                    createdAt: new Date('2024-01-01')
+                    createdAt: new Date('2025-01-01')
                 },
                 totalQuantity: 100,
                 stockQuantity: 45,
-                startDate: new Date('2024-01-01'),
-                endDate: new Date('2024-01-31'),
-                createdAt: new Date('2024-01-01')
+                startDate: new Date('2025-01-01'),
+                endDate: new Date('2025-01-31'),
+                createdAt: new Date('2025-01-01')
             };
             
             const totalCount = 1;
@@ -133,13 +133,13 @@ describe('선착순 쿠폰 서비스 테스트', () => {
                     minOrderAmount: 10000,
                     validDays: 30,
                     isFcfs: true,
-                    createdAt: new Date('2024-01-01')
+                    createdAt: new Date('2025-01-01')
                 },
                 totalQuantity: 100,
                 stockQuantity: 45,
-                startDate: new Date('2024-01-01'),
-                endDate: new Date('2024-01-31'),
-                createdAt: new Date('2024-01-01')
+                startDate: new Date('2025-01-01'),
+                endDate: new Date('2025-01-31'),
+                createdAt: new Date('2025-01-01')
             };
             mockCouponRepository.findFcfsCouponById.mockResolvedValue(expectedCoupon);
 
@@ -173,7 +173,7 @@ describe('선착순 쿠폰 서비스 테스트', () => {
     
         beforeEach(() => {
             // 테스트용 현재 시간 고정
-            now = new Date('2024-01-10T00:00:00Z');
+            now = new Date('2025-01-10T00:00:00Z');
             jest.useFakeTimers();
             jest.setSystemTime(now);
         });
@@ -191,9 +191,9 @@ describe('선착순 쿠폰 서비스 테스트', () => {
                 couponId: 1,
                 totalQuantity: 100,
                 stockQuantity: 50,
-                startDate: new Date('2024-01-01T00:00:00Z'), // 현재보다 이전 날짜
-                endDate: new Date('2024-12-31T23:59:59Z'),   // 현재보다 이후 날짜
-                createdAt: new Date('2024-01-01T00:00:00Z'),
+                startDate: new Date('2025-01-01T00:00:00Z'), // 현재보다 이전 날짜
+                endDate: new Date('2025-12-31T23:59:59Z'),   // 현재보다 이후 날짜
+                createdAt: new Date('2025-01-01T00:00:00Z'),
                 coupon: {
                     id: 1,
                     name: '테스트 쿠폰',
@@ -202,7 +202,7 @@ describe('선착순 쿠폰 서비스 테스트', () => {
                     minOrderAmount: 1000,
                     validDays: 30,
                     isFcfs: true,
-                    createdAt: new Date('2024-01-01T00:00:00Z')
+                    createdAt: new Date('2025-01-01T00:00:00Z')
                 }
             };
     
@@ -211,7 +211,7 @@ describe('선착순 쿠폰 서비스 테스트', () => {
                 userId,
                 couponId: 1,
                 status: CouponStatus.AVAILABLE,
-                expiryDate: new Date('2024-02-09T23:59:59Z'),
+                expiryDate: new Date('2025-02-09T23:59:59Z'),
                 createdAt: now,
                 usedAt: null
             };
@@ -250,7 +250,7 @@ describe('선착순 쿠폰 서비스 테스트', () => {
                 couponId: 1,
                 totalQuantity: 100,
                 stockQuantity: 50,
-                startDate: new Date('2025-01-01T00:00:00Z'),  // 현재보다 미래 날짜
+                startDate: new Date('2125-03-01T00:00:00Z'),  // 현재보다 미래 날짜
                 endDate: new Date('2025-12-31T23:59:59Z'),
                 createdAt: now,
                 coupon: {

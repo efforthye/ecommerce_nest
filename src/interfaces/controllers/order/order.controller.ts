@@ -23,7 +23,7 @@ export class OrderController {
     @ApiOperation({ summary: '주문 상태 업데이트' })
     @ApiParam({ name: 'orderId', description: '주문 ID' })
     @ApiBody({ schema: { example: { status: 'PAID' }}})
-    @ApiResponse({ status: 200, schema: { example: { orderId: 1, status: 'PAID', updatedAt: '2024-01-10T12:00:00Z' }}})
+    @ApiResponse({ status: 200, schema: { example: { orderId: 1, status: 'PAID', updatedAt: '2025-01-10T12:00:00Z' }}})
     @Patch(':orderId/status')
     async updateOrderStatus(
         @Param('orderId') orderId: number, 
