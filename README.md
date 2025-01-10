@@ -399,11 +399,40 @@ UNIQUE INDEX idx_product_variant_unique ON product_variant(product_id, option_na
 #### 상품 결제 진행
 ![alt text](<images/sequence_diagram/상품결제진행.png>)
 
-## Mock API 생성
+## Mock API 생성 -> Swagger 생성
 ### Swagger API Docs
 ![alt text](images/swagger_mock.png)
 - 서버 실행 -> http://localhost:3000/api 접근
+#### 선착순 쿠폰 목록 조회
+![alt text](images/swagger/선착순쿠폰목록조회.png)
+#### 선착순 쿠폰 정보 조회
+![alt text](images/swagger/선착순쿠폰정보조회.png)
+#### 선착순 쿠폰 발급
+![alt text](images/swagger/선착순쿠폰발급.png)
+#### 유저 쿠폰 목록 조회
+![alt text](images/swagger/유저의쿠폰목록조회.png)
+#### 유저 잔액 조회
+![alt text](images/swagger/유저잔액조회.png)
+#### 유저 잔액 충전
+![alt text](images/swagger/유저잔액충전.png)
+#### 인기 상품 목록 조회
+![alt text](images/swagger/인기상품목록조회.png)
+#### 상품 상세 정보 조회
+![alt text](images/swagger/상품상세정보조회.png)
+#### 주문 생성
+![alt text](images/swagger/주문생성.png)
+#### 주문 상태 변경
+![alt text](images/swagger/주문상태변경.png)
+#### 결제
+![alt text](images/swagger/결제.png)
+#### 결제 내역 조회
+![alt text](images/swagger/결제내역조회.png)
+#### 결제 상세정보 조회
+![alt text](images/swagger/결제상세정보조회.png)
+
 <br/><br/>
+
+
 
 
 ## 프로젝트 구조 및 실행 방법

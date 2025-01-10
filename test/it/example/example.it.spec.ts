@@ -1,22 +1,22 @@
-import { DatabaseModule } from "../../../src/infrastructure/database/database.module";
-import { Logger } from "@nestjs/common";
-import { Test } from "@nestjs/testing";
+import { getPrismaClient } from '../util';
 
 describe("Should return expected result", () => {
+  const prisma = getPrismaClient();
+
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({
-      imports: [DatabaseModule],
-    }).compile();
-    moduleRef.useLogger(new Logger());
+    // 필요한 초기화 작업
+  });
+
+  afterAll(async () => {
+    await prisma.$disconnect();
   });
 
   it("Should 1=1", async () => {
     // given
 
-    //when
+    // when
 
-    //then
-
+    // then
     expect(1).toEqual(1);
   });
 });
