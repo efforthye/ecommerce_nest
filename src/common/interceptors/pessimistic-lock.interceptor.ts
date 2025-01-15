@@ -1,5 +1,5 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler, BadRequestException } from '@nestjs/common';
-import { from, lastValueFrom, Observable, switchMap } from 'rxjs';
+import { from, lastValueFrom, Observable } from 'rxjs';
 import { Reflector } from '@nestjs/core';
 import { PESSIMISTIC_LOCK_KEY } from '../constants/app.constants';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
@@ -69,21 +69,12 @@ export class PessimisticLockInterceptor implements NestInterceptor {
         switch (resourceType) {
             case 'Coupon':
                 await tx.$executeRawUnsafe(
-                    `SELECT * FROM "Coupon" WHERE "id" = $1 AND "is_fcfs" = TRUE FOR UPDATE ${nowaitClause}`,
+                    `SELECT * FROM "Coupon" WHERE "id" = $1 FOR UPDATE ${nowaitClause}`,
                     resourceId
                 );
                 break;
             case 'FcfsCoupon':
-                // 락 없이 Coupon 테이블 쿠폰 유효성 체크
-                await tx.$executeRawUnsafe(
-                    `SELECT c.is_fcfs FROM \`coupon\` c 
-                     WHERE c.id = (SELECT \`coupon_id\` FROM \`FcfsCoupon\` WHERE id = $1)`,
-                    resourceId
-                );
-
-                // 재고 수량 체크 (stock_quantity > 0)
-                // 발급 기간 체크 (start_date <= 현재 <= end_date)
-                // 조건을 만족하는 FcfsCoupon row에 대해 베타 락 적용
+                // 먼저 FcfsCoupon 테이블에 락 적용
                 await tx.$executeRawUnsafe(
                     `SELECT * FROM \`FcfsCoupon\` 
                     WHERE id = $1 
@@ -91,6 +82,13 @@ export class PessimisticLockInterceptor implements NestInterceptor {
                     AND \`start_date\` <= CURRENT_TIMESTAMP 
                     AND \`end_date\` > CURRENT_TIMESTAMP 
                     FOR UPDATE ${nowaitClause}`,
+                    resourceId
+                );
+                
+                // 이후 Coupon 테이블은 락 없이 조회만 수행
+                await tx.$executeRawUnsafe(
+                    `SELECT c.is_fcfs FROM \`coupon\` c 
+                     WHERE c.id = (SELECT \`coupon_id\` FROM \`FcfsCoupon\` WHERE id = $1)`,
                     resourceId
                 );
                 break;

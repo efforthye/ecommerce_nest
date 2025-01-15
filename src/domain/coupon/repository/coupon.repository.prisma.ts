@@ -87,7 +87,8 @@ export class CouponRepositoryPrisma implements CouponRepository {
         id: number,
         tx: Prisma.TransactionClient
     ): Promise<FcfsCouponWithCoupon | null> {
-        type QueryResult = {
+        // 먼저 FcfsCoupon 테이블만 잠금을 걸고 조회
+        const fcfsCoupon = await tx.$queryRaw<{
             id: number;
             couponId: number;
             totalQuantity: number;
@@ -95,55 +96,36 @@ export class CouponRepositoryPrisma implements CouponRepository {
             startDate: Date;
             endDate: Date;
             createdAt: Date;
-            c_id: number;
-            c_name: string;
-            c_type: string;
-            c_amount: number;
-            c_minOrderAmount: number;
-            c_validDays: number;
-            c_isFcfs: boolean;
-            c_createdAt: Date;
-        }[];
-
-        const result = await tx.$queryRaw<QueryResult>`
-            SELECT 
-                fc.*,
-                c.id as c_id,
-                c.name as c_name,
-                c.type as c_type,
-                c.amount as c_amount,
-                c.minOrderAmount as c_minOrderAmount, 
-                c.validDays as c_validDays,
-                c.isFcfs as c_isFcfs,
-                c.createdAt as c_createdAt
-            FROM \`FcfsCoupon\` fc
-            INNER JOIN \`Coupon\` c ON fc.\`couponId\` = c.id
-            WHERE fc.id = ${id}
+        }[]>`
+            SELECT * FROM \`FcfsCoupon\`
+            WHERE id = ${id}
             FOR UPDATE;
         `;
 
-        if (!result || result.length === 0) {
+        if (!fcfsCoupon || fcfsCoupon.length === 0) {
             return null;
         }
 
-        const row = result[0];
+        // 관련 쿠폰 정보 조회 (잠금 없이)
+        const coupon = await tx.coupon.findUnique({
+            where: { id: fcfsCoupon[0].couponId }
+        });
+
+        if (!coupon) {
+            return null;
+        }
+
         return {
-            id: row.id,
-            couponId: row.couponId,
-            totalQuantity: row.totalQuantity,
-            stockQuantity: row.stockQuantity,
-            startDate: row.startDate,
-            endDate: row.endDate,
-            createdAt: row.createdAt,
+            ...fcfsCoupon[0],
             coupon: {
-                id: row.c_id,
-                name: row.c_name,
-                type: row.c_type,
-                amount: row.c_amount,
-                minOrderAmount: row.c_minOrderAmount,
-                validDays: row.c_validDays,
-                isFcfs: row.c_isFcfs,
-                createdAt: row.c_createdAt
+                id: coupon.id,
+                name: coupon.name,
+                type: coupon.type,
+                amount: Number(coupon.amount),
+                minOrderAmount: Number(coupon.minOrderAmount),
+                validDays: coupon.validDays,
+                isFcfs: coupon.isFcfs,
+                createdAt: coupon.createdAt
             }
         };
     }
