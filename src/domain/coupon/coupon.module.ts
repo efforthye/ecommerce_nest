@@ -1,18 +1,18 @@
 import { Module } from '@nestjs/common';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { CouponService } from './service/coupon.service';
-import { CouponRepositoryImpl } from 'src/infrastructure/repositories/coupon/coupon.repository.impl';
 import { COUPON_REPOSITORY } from 'src/common/constants/app.constants';
+import { CouponRepositoryPrisma } from './repository/coupon.repository.prisma';
 
 @Module({
     providers: [
         CouponService, // 비즈니스 로직 관리
+        PrismaService, // DB 접근
         {
             provide: COUPON_REPOSITORY,
-            useClass: CouponRepositoryImpl, // 인터페이스와 구현체 연결
-        },
-        PrismaService, // DB 접근
+            useClass: CouponRepositoryPrisma,
+        }
     ],
-    exports: [CouponService, COUPON_REPOSITORY], // 다른 모듈에서 사용할 수 있도록 내보냄
+    exports: [CouponService], // 다른 모듈에서 사용할 수 있도록 내보냄
 })
 export class CouponModule {}

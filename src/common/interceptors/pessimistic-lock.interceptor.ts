@@ -76,8 +76,8 @@ export class PessimisticLockInterceptor implements NestInterceptor {
             case 'FcfsCoupon':
                 // 락 없이 Coupon 테이블 쿠폰 유효성 체크
                 await tx.$executeRawUnsafe(
-                    `SELECT c.is_fcfs FROM "Coupon" c 
-                     WHERE c.id = (SELECT coupon_id FROM "FcfsCoupon" WHERE id = $1)`,
+                    `SELECT c.is_fcfs FROM \`coupon\` c 
+                     WHERE c.id = (SELECT \`coupon_id\` FROM \`FcfsCoupon\` WHERE id = $1)`,
                     resourceId
                 );
 
@@ -85,11 +85,11 @@ export class PessimisticLockInterceptor implements NestInterceptor {
                 // 발급 기간 체크 (start_date <= 현재 <= end_date)
                 // 조건을 만족하는 FcfsCoupon row에 대해 베타 락 적용
                 await tx.$executeRawUnsafe(
-                    `SELECT * FROM "FcfsCoupon" 
+                    `SELECT * FROM \`FcfsCoupon\` 
                     WHERE id = $1 
-                    AND stock_quantity > 0 
-                    AND start_date <= CURRENT_TIMESTAMP 
-                    AND end_date > CURRENT_TIMESTAMP 
+                    AND \`stock_quantity\` > 0 
+                    AND \`start_date\` <= CURRENT_TIMESTAMP 
+                    AND \`end_date\` > CURRENT_TIMESTAMP 
                     FOR UPDATE ${nowaitClause}`,
                     resourceId
                 );

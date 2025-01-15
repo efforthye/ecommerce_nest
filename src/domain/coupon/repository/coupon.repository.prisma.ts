@@ -1,16 +1,26 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
-import { FcfsCoupon, UserCoupon, Prisma } from '@prisma/client';
+import { FcfsCoupon, UserCoupon, Prisma, CouponStatus } from '@prisma/client';
 import { PaginationDto } from '../dto/pagination.dto';
 import { CouponRepository } from './coupon.repository';
 import { FcfsCouponWithCoupon, CreateUserCouponInput } from '../types/coupon.types';
 
 @Injectable()
-export class CouponRepositoryImpl implements CouponRepository {
+export class CouponRepositoryPrisma implements CouponRepository {
     constructor(private readonly prisma: PrismaService) {}
     
-    findExistingUserCoupon(userId: number, couponId: number, tx: Prisma.TransactionClient): Promise<UserCoupon | null> {
-        throw new Error('Method not implemented.');
+    async findExistingUserCoupon(
+        userId: number, 
+        couponId: number, 
+        tx: Prisma.TransactionClient
+    ): Promise<UserCoupon | null> {
+        return await tx.userCoupon.findFirst({
+            where: {
+                userId,
+                couponId,
+                status: CouponStatus.AVAILABLE
+            }
+        });
     }
 
     async findAvailableFcfsCoupons(
@@ -102,12 +112,12 @@ export class CouponRepositoryImpl implements CouponRepository {
                 c.name as c_name,
                 c.type as c_type,
                 c.amount as c_amount,
-                c.min_order_amount as c_minOrderAmount,
-                c.valid_days as c_validDays,
-                c.is_fcfs as c_isFcfs,
-                c.created_at as c_createdAt
-            FROM "FcfsCoupon" fc
-            INNER JOIN "Coupon" c ON fc."couponId" = c.id
+                c.minOrderAmount as c_minOrderAmount, 
+                c.validDays as c_validDays,
+                c.isFcfs as c_isFcfs,
+                c.createdAt as c_createdAt
+            FROM \`FcfsCoupon\` fc
+            INNER JOIN \`Coupon\` c ON fc.\`couponId\` = c.id
             WHERE fc.id = ${id}
             FOR UPDATE;
         `;

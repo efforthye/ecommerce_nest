@@ -34,11 +34,11 @@ import * as Joi from 'joi';
       }),
     }),
     DatabaseModule, 
-    CouponModule, 
     ProductModule, 
     BalanceModule,
     OrderModule,
     PaymentModule,
+    CouponModule,
   ],
   controllers: [
     CouponController,
@@ -51,7 +51,6 @@ import * as Joi from 'joi';
   ],
   providers: [
     JwtAuthGuard,
-    CouponService,
     BalanceService
   ],
 })

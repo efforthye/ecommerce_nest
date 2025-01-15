@@ -48,7 +48,7 @@ export class CouponController {
     @ApiParam({ name: 'id', description: '쿠폰 아이디' })
     @ApiBody({ description: "유저 아이디", schema: { type: "object", properties: { userId: { type: "number" } }, required: ["userId"] } })
     @ApiResponse({ status: 201, description: '쿠폰 발급 성공', schema: { example: { id: 3, userId: 1, couponId: 1, status: "AVAILABLE", expiryDate: "2025-02-14T14:05:43.654Z", createdAt: "2025-01-15T14:05:43.656Z", usedAt: null } } })
-    @ApiResponse({ status: 400, description: '이미 발급된 쿠폰', schema: { example: { message: "이미 사용된 쿠폰입니다.", error: "Bad Request", statusCode: 400 } } })
+    @ApiResponse({ status: 400, description: '이미 발급된 쿠폰', schema: { example: { message: "이미 발급된 쿠폰입니다.", error: "Bad Request", statusCode: 400 } } })
     @ApiResponse({ status: 401, description: '인증 실패', schema: { example: { message: "잘못된 테스트 토큰입니다.", error: "Unauthorized", statusCode: 401 } } })
     @UseGuards(JwtAuthGuard)
     @PessimisticLock({resourceType: 'FcfsCoupon', noWait: false})
@@ -72,10 +72,15 @@ export class CouponController {
     @Get('my')
     async getMyCoupons(
         @Query('userId') userId: number,
-        @Query() pagination: PaginationDto
+        @Query('page') page?: number,
+        @Query('limit') limit?: number,
     ): Promise<any> {
         if (!userId) throw new BadRequestException('userId는 필수값 입니다.');
 
+        const pagination = new PaginationDto();
+        pagination.page = page || 1;
+        pagination.limit = limit || 10;
+        
         return this.couponService.getMyCoupons(userId, pagination);
     }
 
