@@ -8,6 +8,7 @@ import { DatabaseSetup } from './infrastructure/database/database.setup';
 import { CustomLoggerService } from './infrastructure/logging/logger.service';
 import { ConfigService } from '@nestjs/config';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -23,6 +24,7 @@ async function bootstrap() {
   const logger = await app.resolve(CustomLoggerService);
   const configService = app.get(ConfigService);
   app.useGlobalFilters(new HttpExceptionFilter(logger, configService));
+  app.useGlobalInterceptors(new LoggingInterceptor(logger));
 
   // 데이터베이스 초기화
   const databaseConfig = app.get(DatabaseConfig);
