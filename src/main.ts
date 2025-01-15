@@ -5,6 +5,9 @@ import { PrismaClient } from '@prisma/client';
 import { ValidationPipe } from '@nestjs/common';
 import { DatabaseConfig } from './infrastructure/database/database.config';
 import { DatabaseSetup } from './infrastructure/database/database.setup';
+import { CustomLoggerService } from './infrastructure/logging/logger.service';
+import { ConfigService } from '@nestjs/config';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,6 +18,11 @@ async function bootstrap() {
     whitelist: true, 
     forbidNonWhitelisted: true, 
   }));
+
+  // Logger 전역 필터 적용
+  const logger = await app.resolve(CustomLoggerService);
+  const configService = app.get(ConfigService);
+  app.useGlobalFilters(new HttpExceptionFilter(logger, configService));
 
   // 데이터베이스 초기화
   const databaseConfig = app.get(DatabaseConfig);

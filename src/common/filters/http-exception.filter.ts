@@ -10,7 +10,6 @@ import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 import { CustomLoggerService } from 'src/infrastructure/logging/logger.service';
 
-
 /**
  * 에러 응답의 표준 형식을 정의하는 인터페이스
  */
