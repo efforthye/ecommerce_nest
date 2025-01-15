@@ -17,6 +17,7 @@ import { PaymentModule } from "./domain/payment/payment.module";
 import { PaymentController } from "./interfaces/controllers/payment/payment.controller";
 import { ConfigModule } from "@nestjs/config";
 import * as Joi from 'joi';
+import { DatabaseConfig } from "./infrastructure/database/database.config";
 
 @Module({
   imports: [
@@ -51,7 +52,8 @@ import * as Joi from 'joi';
   ],
   providers: [
     JwtAuthGuard,
-    BalanceService
+    BalanceService,
+    DatabaseConfig
   ],
 })
 export class AppModule {}

@@ -3,30 +3,31 @@ import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { PrismaClient } from '@prisma/client';
 import { ValidationPipe } from '@nestjs/common';
+import { DatabaseConfig } from './infrastructure/database/database.config';
+import { DatabaseSetup } from './infrastructure/database/database.setup';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Prisma Client 초기화
-  const prisma = new PrismaClient();
-
   // 전역 파이프라인 정의
   app.useGlobalPipes(new ValidationPipe({ 
-    // 클라이언트로부터 받은 데이터를 자동으로 DTO에 정의된 타입으로 변환
     transform: true, 
-    // DTO에 정의되지 않은 속성은 제거
     whitelist: true, 
-    // DTO에 정의되지 않은 속성이 포함되어 있으면 요청 자체를 거부
     forbidNonWhitelisted: true, 
   }));
 
-  // Prisma와 데이터베이스 연결 확인
+  // 데이터베이스 초기화
+  const databaseConfig = app.get(DatabaseConfig);
+  await DatabaseSetup.initializeDatabase(databaseConfig);
+
+  // Prisma Client 초기화 및 연결
+  const prisma = new PrismaClient();
   try {
     await prisma.$connect();
     console.log('Prisma connected to the database successfully.');
   } catch (error) {
     console.error('Error connecting to the database:', error);
-    process.exit(1); // 데이터베이스 연결 실패 시 애플리케이션 종료
+    process.exit(1);
   }
 
   // Swagger 설정
