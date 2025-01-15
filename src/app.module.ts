@@ -16,7 +16,7 @@ import { OrderModule } from "./domain/order/order.module";
 import { PaymentModule } from "./domain/payment/payment.module";
 import { PaymentController } from "./interfaces/controllers/payment/payment.controller";
 import { ConfigModule } from "@nestjs/config";
-import Joi from "joi";
+import * as Joi from 'joi';
 
 @Module({
   imports: [

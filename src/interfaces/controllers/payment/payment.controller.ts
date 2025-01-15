@@ -51,9 +51,7 @@ export class PaymentController {
         @Query('page') page?: number,
         @Query('pageSize') pageSize?: number,
     ) {
-        if (!userId) {
-            throw new BadRequestException('User ID is required');
-        }
+        if (!userId) throw new BadRequestException('userId는 필수값 입니다.');
 
         const pagination = { page: page || 1, pageSize: pageSize || 10 };
         return await this.paymentService.getUserPayments(userId, pagination);
@@ -74,9 +72,7 @@ export class PaymentController {
         @Param('id') paymentId: number,
         @Query('userId') userId: number,
     ) {
-        if (!userId) {
-            throw new BadRequestException('User ID is required');
-        }
+        if (!userId) throw new BadRequestException('userId는 필수값 입니다.');
 
         return await this.paymentService.getPaymentDetail(userId, paymentId);
     }
@@ -96,9 +92,7 @@ export class PaymentController {
         @Param('id') paymentId: number,
         @Query('userId') userId: number,
     ) {
-        if (!userId) {
-            throw new BadRequestException('User ID is required');
-        }
+        if (!userId) throw new BadRequestException('userId는 필수값 입니다.');
 
         return await this.paymentService.cancelPayment(userId, paymentId);
     }

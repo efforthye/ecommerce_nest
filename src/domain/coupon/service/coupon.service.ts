@@ -4,7 +4,6 @@ import { CouponStatus, FcfsCoupon, UserCoupon } from '@prisma/client';
 import { COUPON_REPOSITORY } from 'src/common/constants/app.constants';
 import { PaginationDto } from '../dto/pagination.dto';
 import { CouponPageResponse } from '../dto/coupon_page_response.dto';
-import { PessimisticLock } from 'src/common/decorators/pessimistic-lock.decorator';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 
 @Injectable()
@@ -40,7 +39,7 @@ export class CouponService {
                 fcfsCoupon.couponId,
                 tx
             );
-            if (existingCoupon) throw new BadRequestException('Already issued this coupon');
+            if (existingCoupon) throw new BadRequestException('이미 사용된 쿠폰입니다.');
 
             if (fcfsCoupon.stockQuantity <= 0) {
                 throw new BadRequestException('Coupon stock is empty');
@@ -68,11 +67,9 @@ export class CouponService {
         });
     }
 
-
     // 유저 쿠폰 목록 조회
     async getMyCoupons(userId: number, pagination: PaginationDto): Promise<{ data: UserCoupon[]; total: number }> {
         const [coupons, total] = await this.couponRepository.findUserCoupons(userId, pagination);
         return { data: coupons, total };
     }
-    
 }
