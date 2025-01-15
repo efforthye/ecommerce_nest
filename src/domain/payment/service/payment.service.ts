@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PaymentRepository } from '../repository/payment.repository';
-import { PAYMENT_REPOSITORY } from 'src/common/constants/repository.constants';
+import { PAYMENT_REPOSITORY } from 'src/common/constants/app.constants';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { OrderService } from '../../order/service/order.service';
 import { BalanceService } from '../../balance/service/balance.service';

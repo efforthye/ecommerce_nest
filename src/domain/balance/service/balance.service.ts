@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { BalanceRepository } from '../repository/balance.repository';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { BalanceType } from '@prisma/client'; // BalanceType 열거형 가져오기
-import { BALANCE_REPOSITORY } from 'src/common/constants/repository.constants';
+import { BALANCE_REPOSITORY } from 'src/common/constants/app.constants';
 
 @Injectable()
 export class BalanceService {

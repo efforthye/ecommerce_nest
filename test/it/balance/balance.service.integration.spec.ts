@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { BalanceService } from 'src/domain/balance/service/balance.service';
 import { BalanceRepository } from 'src/domain/balance/repository/balance.repository';
-import { BALANCE_REPOSITORY } from 'src/common/constants/repository.constants';
+import { BALANCE_REPOSITORY } from 'src/common/constants/app.constants';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { BalanceType } from '@prisma/client';

@@ -8,6 +8,7 @@ import { BadRequestException, Body, Controller, Get, Headers, Param, Post, Query
 import { UserAccount, UserCoupon } from "@prisma/client";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
 import { JwtAuthGuard } from "src/common/guards/jwt-auth.guard";
+import { PessimisticLock } from "src/common/decorators/pessimistic-lock.decorator";
 
 @ApiTags('쿠폰')
 @Controller("coupons")
@@ -55,7 +56,8 @@ export class CouponController {
     @ApiParam({ name: 'id', description: '쿠폰 아이디' })
     @ApiBody({ description: "유저 아이디", schema: { type: "object", properties: { userId: { type: "number" } }, required: ["userId"] } })
     @ApiResponse({ status: 200, description: '쿠폰 발급 성공' })
-    // @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard)
+    @PessimisticLock({resourceType: 'FcfsCoupon', noWait: false})
     @Post("fcfs/:id/issue")
     async issueCoupon(
         @Headers("authorization") authHeader: string,

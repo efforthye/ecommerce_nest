@@ -2,7 +2,7 @@
 import { Test } from '@nestjs/testing';
 import { OrderService } from 'src/domain/order/service/order.service';
 import { OrderRepository } from 'src/domain/order/repository/order.repository';
-import { ORDER_REPOSITORY } from 'src/common/constants/repository.constants';
+import { ORDER_REPOSITORY } from 'src/common/constants/app.constants';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { OrderStatus, Prisma } from '@prisma/client';
 import { OrderType } from 'src/domain/order/types/order.type';

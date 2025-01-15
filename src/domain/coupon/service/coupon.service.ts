@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CouponRepository } from '../repository/coupon.repository';
 import { CouponStatus, FcfsCoupon, UserCoupon } from '@prisma/client';
-import { COUPON_REPOSITORY } from 'src/common/constants/repository.constants';
+import { COUPON_REPOSITORY } from 'src/common/constants/app.constants';
 import { PaginationDto } from '../dto/pagination.dto';
 import { CouponPageResponse } from '../dto/coupon_page_response.dto';
 import { PessimisticLock } from 'src/common/decorators/pessimistic-lock.decorator';
@@ -29,7 +29,6 @@ export class CouponService {
     }
     
     // 선착순 쿠폰 발급
-    @PessimisticLock()
     async issueFcfsCoupon(userId: number, fcfsCouponId: number): Promise<UserCoupon> {
         return await this.prisma.$transaction(async (tx) => {
             const fcfsCoupon = await this.couponRepository.findFcfsCouponWithLock(fcfsCouponId, tx);

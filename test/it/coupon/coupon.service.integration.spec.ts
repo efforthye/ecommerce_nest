@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { CouponService } from 'src/domain/coupon/service/coupon.service';
 import { CouponRepository } from 'src/domain/coupon/repository/coupon.repository';
-import { COUPON_REPOSITORY } from 'src/common/constants/repository.constants';
+import { COUPON_REPOSITORY } from 'src/common/constants/app.constants';
 import { BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { CouponStatus } from '@prisma/client';

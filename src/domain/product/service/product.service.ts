@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { ProductRepository } from '../repository/product.repository';
-import { PRODUCT_REPOSITORY } from 'src/common/constants/repository.constants';
+import { PRODUCT_REPOSITORY } from 'src/common/constants/app.constants';
 import { ProductResponseDto, ProductDetailResponseDto } from '../dto/product-response.dto';
 
 @Injectable()

@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { CouponService } from './service/coupon.service';
 import { CouponRepositoryImpl } from 'src/infrastructure/repositories/coupon/coupon.repository.impl';
-import { COUPON_REPOSITORY } from 'src/common/constants/repository.constants';
+import { COUPON_REPOSITORY } from 'src/common/constants/app.constants';
 
 @Module({
     providers: [
