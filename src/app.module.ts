@@ -9,18 +9,30 @@ import { TestController } from "./interfaces/controllers/test/test.controller";
 import { CouponModule } from "./domain/coupon/coupon.module";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 import { ProductModule } from "./domain/product/product.module";
-import { ProductService } from "./domain/product/service/product.service";
 import { CouponService } from "./domain/coupon/service/coupon.service";
-import { PRODUCT_REPOSITORY } from "./common/constants/repository.constants";
 import { BalanceModule } from "./domain/balance/balance.module";
 import { BalanceService } from "./domain/balance/service/balance.service";
 import { OrderModule } from "./domain/order/order.module";
 import { PaymentModule } from "./domain/payment/payment.module";
 import { PaymentController } from "./interfaces/controllers/payment/payment.controller";
-import { PaymentService } from "./domain/payment/service/payment.service";
+import { ConfigModule } from "@nestjs/config";
+import Joi from "joi";
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true, // .env 전역 사용
+      validationSchema: Joi.object({
+        DATABASE_URL: Joi.string().uri().required().default('mysql://root:1234@localhost:3306/ecommerce'),
+        DB_USERNAME: Joi.string().required().default('root'),
+        DB_PASSWORD: Joi.string().required().default('1234'),
+        DB_HOST: Joi.string().hostname().required().default('localhost'),
+        DB_PORT: Joi.number().port().required().default(3306),
+        DB_DATABASE: Joi.string().required().default('ecommerce'),
+        JWT_BYPASS_TOKEN: Joi.string().required().default('happy-world-token'),
+        JWT_REGISTER_SECRET_KEY: Joi.string().required().default('happy-world-register-key'),
+      }),
+    }),
     DatabaseModule, 
     CouponModule, 
     ProductModule, 
