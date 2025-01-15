@@ -130,6 +130,132 @@ export class DatabaseSetup {
                 skipDuplicates: true,
             });
             console.log('Created products:', products);
+
+            // 상품 옵션 데이터 생성
+            const productVariants = await prisma.productVariant.createMany({
+                data: [
+                    // 아이폰17pro 옵션
+                    {
+                        productId: 1,
+                        optionName: '블루 티타늄-256GB',
+                        stockQuantity: 50,
+                        price: 1200000.0,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                    {
+                        productId: 1,
+                        optionName: '블루 티타늄-512GB',
+                        stockQuantity: 30,
+                        price: 1400000.0,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                    {
+                        productId: 1,
+                        optionName: '내추럴 티타늄-256GB',
+                        stockQuantity: 40,
+                        price: 1200000.0,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                    // 맥북pro m7 옵션
+                    {
+                        productId: 2,
+                        optionName: '스페이스 블랙-512GB',
+                        stockQuantity: 20,
+                        price: 1500000.0,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                    {
+                        productId: 2,
+                        optionName: '스페이스 블랙-1TB',
+                        stockQuantity: 15,
+                        price: 1800000.0,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                    {
+                        productId: 2,
+                        optionName: '실버-512GB',
+                        stockQuantity: 25,
+                        price: 1500000.0,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                    // 에어팟4 옵션
+                    {
+                        productId: 3,
+                        optionName: '화이트',
+                        stockQuantity: 100,
+                        price: 200000.0,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                    {
+                        productId: 3,
+                        optionName: '블랙',
+                        stockQuantity: 80,
+                        price: 200000.0,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    }
+                ],
+                skipDuplicates: true,
+            });
+            console.log('Created product variants:', productVariants);
+
+            // 상품 이미지 데이터 생성
+            const productImages = await prisma.productImage.createMany({
+                data: [
+                    // 아이폰17pro 이미지
+                    {
+                        productId: 1,
+                        productVariantId: null,
+                        imageUrl: 'iphone17pro-main.jpg',
+                        sequence: 1,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                    {
+                        productId: 1,
+                        productVariantId: 1, // 블루 티타늄 이미지
+                        imageUrl: 'iphone17pro-blue.jpg',
+                        sequence: 1,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                    // 맥북pro m7 이미지
+                    {
+                        productId: 2,
+                        productVariantId: null,
+                        imageUrl: 'macbook-m7-main.jpg',
+                        sequence: 1,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                    {
+                        productId: 2,
+                        productVariantId: 4, // 스페이스 블랙 이미지
+                        imageUrl: 'macbook-m7-black.jpg',
+                        sequence: 1,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                    // 에어팟4 이미지
+                    {
+                        productId: 3,
+                        productVariantId: null,
+                        imageUrl: 'airpods4-main.jpg',
+                        sequence: 1,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    }
+                ],
+                skipDuplicates: true,
+            });
+            console.log('Created product images:', productImages);
     
             // 유저 잔액 데이터 생성
             const balances = await prisma.userBalance.createMany({

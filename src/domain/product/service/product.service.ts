@@ -11,34 +11,42 @@ export class ProductService {
         private readonly productRepository: ProductRepository
     ) {}
 
+    private mapProductImages(productImages) {
+        return productImages.map(({ id, productId, productVariantId, imageUrl, sequence, createdAt, updatedAt }) => ({
+            id,
+            productId,
+            productVariantId,
+            imageUrl,
+            sequence,
+            createdAt,
+            updatedAt
+        }));
+    }
+
+    private mapVariants(variants) {
+        return variants.map(({ id, productId, optionName, stockQuantity, price, createdAt, updatedAt }) => ({
+            id,
+            productId,
+            optionName,
+            stockQuantity,
+            price: Number(price),
+            createdAt,
+            updatedAt
+        }));
+    }
+
     async getPopularProducts(limit: number = 10): Promise<ProductResponseDto[]> {
         const products = await this.productRepository.findPopularProducts(limit);
-        return products.map(product => ({
-            id: product.id,
-            name: product.name,
-            basePrice: Number(product.basePrice),
-            description: product.description,
-            isActive: product.isActive,
-            productImages: product.productImages.map(image => ({
-                id: image.id,
-                productId: image.productId,
-                productVariantId: image.productVariantId,
-                imageUrl: image.imageUrl,
-                sequence: image.sequence,
-                createdAt: image.createdAt,
-                updatedAt: image.updatedAt
-            })),
-            variants: product.variants.map(variant => ({
-                id: variant.id,
-                productId: variant.productId,
-                optionName: variant.optionName,
-                stockQuantity: variant.stockQuantity,
-                price: Number(variant.price),
-                createdAt: variant.createdAt,
-                updatedAt: variant.updatedAt
-            })),
-            createdAt: product.createdAt,
-            updatedAt: product.updatedAt
+        return products.map(({ id, name, basePrice, description, isActive, productImages, variants, createdAt, updatedAt }) => ({
+            id,
+            name,
+            basePrice: Number(basePrice),
+            description,
+            isActive,
+            productImages: this.mapProductImages(productImages),
+            variants: this.mapVariants(variants),
+            createdAt,
+            updatedAt
         }));
     }
 
@@ -48,32 +56,18 @@ export class ProductService {
             throw new NotFoundException('Product not found');
         }
 
+        const { id: productId, name, basePrice, description, isActive, productImages, variants, createdAt, updatedAt } = product;
+
         return {
-            id: product.id,
-            name: product.name,
-            basePrice: Number(product.basePrice),
-            description: product.description,
-            isActive: product.isActive,
-            productImages: product.productImages.map(image => ({
-                id: image.id,
-                productId: image.productId,
-                productVariantId: image.productVariantId,
-                imageUrl: image.imageUrl,
-                sequence: image.sequence,
-                createdAt: image.createdAt,
-                updatedAt: image.updatedAt
-            })),
-            variants: product.variants.map(variant => ({
-                id: variant.id,
-                productId: variant.productId,
-                optionName: variant.optionName,
-                stockQuantity: variant.stockQuantity,
-                price: Number(variant.price),
-                createdAt: variant.createdAt,
-                updatedAt: variant.updatedAt
-            })),
-            createdAt: product.createdAt,
-            updatedAt: product.updatedAt
+            id: productId,
+            name,
+            basePrice: Number(basePrice),
+            description,
+            isActive,
+            productImages: this.mapProductImages(productImages),
+            variants: this.mapVariants(variants),
+            createdAt,
+            updatedAt
         };
     }
 }
