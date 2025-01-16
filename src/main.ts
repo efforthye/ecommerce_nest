@@ -15,9 +15,14 @@ async function bootstrap() {
 
   // 전역 파이프라인 정의
   app.useGlobalPipes(new ValidationPipe({ 
-    transform: true, 
-    whitelist: true, 
-    forbidNonWhitelisted: true, 
+    transform: true, // 입력값을 DTO 클래스의 인스턴스로 변환
+    whitelist: true, // DTO에 정의되지 않은 속성 제거
+    forbidNonWhitelisted: false, // DTO에 정의되지 않은 속성이 있으면 에러
+    transformOptions: { 
+      enableImplicitConversion: true, // 암시적 타입 변환 활성화
+    },
+    skipMissingProperties: false, // 누락된 필수 속성에 대해 에러 발생
+    stopAtFirstError: true,       // 첫 번째 에러에서 중단
   }));
 
   // Logger 전역 필터 적용

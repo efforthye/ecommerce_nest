@@ -13,6 +13,6 @@ import { CouponRepositoryPrisma } from './repository/coupon.repository.prisma';
             useClass: CouponRepositoryPrisma,
         }
     ],
-    exports: [CouponService], // 다른 모듈에서 사용할 수 있도록 내보냄
+    exports: [CouponService, COUPON_REPOSITORY], // 다른 모듈에서 사용할 수 있도록 내보냄
 })
 export class CouponModule {}

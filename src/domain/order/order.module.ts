@@ -4,8 +4,14 @@ import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { OrderController } from 'src/interfaces/controllers/order/order.controller';
 import { OrderRepositoryPrisma } from 'src/domain/order/repository/order.repository.prisma';
 import { ORDER_REPOSITORY } from 'src/common/constants/app.constants';
+import { ProductModule } from '../product/product.module';
+import { CouponModule } from '../coupon/coupon.module';
 
 @Module({
+    imports: [
+        ProductModule,
+        CouponModule
+    ],
     controllers: [OrderController],
     providers: [
         OrderService,

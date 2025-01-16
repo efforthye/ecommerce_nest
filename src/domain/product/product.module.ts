@@ -13,6 +13,6 @@ import { ProductRepositoryPrisma } from './repository/product.repository.impl';
         },
         PrismaService
     ],
-    exports: [ProductService]
+    exports: [ProductService, PRODUCT_REPOSITORY]
 })
 export class ProductModule {}
