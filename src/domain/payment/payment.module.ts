@@ -4,7 +4,7 @@ import { OrderModule } from '../order/order.module';
 import { BalanceModule } from '../balance/balance.module';
 import { PaymentController } from 'src/interfaces/controllers/payment/payment.controller';
 import { PAYMENT_REPOSITORY } from 'src/common/constants/app.constants';
-import { PaymentRepositoryImpl } from 'src/infrastructure/repositories/payment/payment.repository.impl';
+import { PaymentRepositoryPrisma } from 'src/domain/payment/repository/payment.repository.prisma';
 import { DatabaseModule } from 'src/infrastructure/database/database.module';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 
@@ -20,7 +20,7 @@ import { PrismaService } from 'src/infrastructure/database/prisma.service';
         PrismaService,
         {
             provide: PAYMENT_REPOSITORY,
-            useClass: PaymentRepositoryImpl
+            useClass: PaymentRepositoryPrisma
         }
     ],
     exports: [PaymentService, PAYMENT_REPOSITORY]

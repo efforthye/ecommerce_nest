@@ -6,7 +6,7 @@ import { CreatePaymentInput, PaymentWithOrder } from 'src/domain/payment/types/p
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 
 @Injectable()
-export class PaymentRepositoryImpl implements PaymentRepository {
+export class PaymentRepositoryPrisma implements PaymentRepository {
     constructor(private readonly prisma: PrismaService) {}
 
     async createPayment(
