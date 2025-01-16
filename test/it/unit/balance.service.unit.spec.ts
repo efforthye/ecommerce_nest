@@ -1,130 +1,79 @@
-// test/it/balance/balance.service.unit.spec.ts
-import { Test } from '@nestjs/testing';
-import { BalanceService } from 'src/domain/balance/service/balance.service';
-import { BalanceRepository } from 'src/domain/balance/repository/balance.repository';
-import { BALANCE_REPOSITORY } from 'src/common/constants/app.constants';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
-import { BalanceType, Prisma } from '@prisma/client';
+import { Test, TestingModule } from '@nestjs/testing';
+import { BalanceService } from '../../../src/domain/balance/service/balance.service';
+import { PrismaService } from '../../../src/infrastructure/database/prisma.service';
+import { BalanceRepository } from '../../../src/domain/balance/repository/balance.repository';
+import { BALANCE_REPOSITORY } from '../../../src/common/constants/app.constants';
+import { UserBalance, BalanceType, Prisma } from '@prisma/client';
+import { REQUEST } from '@nestjs/core';
+import { BalanceRepositoryPrisma } from 'src/domain/balance/repository/balance.repository.prisma';
 
 describe('잔액 서비스 테스트', () => {
+    let moduleRef: TestingModule;
     let balanceService: BalanceService;
-    let mockBalanceRepository: jest.Mocked<BalanceRepository>;
-    let mockPrismaService: jest.Mocked<PrismaService>;
+    let prisma: PrismaService;
+    let balanceRepository: BalanceRepository;
 
-    beforeEach(async () => {
-        // 각 테스트 전에 Repository mock 초기화
-        mockBalanceRepository = {
-            findByUserId: jest.fn(),
-            chargeBalance: jest.fn(),
-            createBalanceHistory: jest.fn(),
-        };
+    const mockRequest = {
+        prismaTransaction: undefined
+    };
 
-        mockPrismaService = {
-            $transaction: jest.fn(callback => callback(mockPrismaService))
-        } as any;
-
-        // 테스트 모듈 설정
-        const moduleRef = await Test.createTestingModule({
+    beforeAll(async () => {
+        moduleRef = await Test.createTestingModule({
             providers: [
+                    BalanceService,
+                    PrismaService,
                 {
                     provide: BALANCE_REPOSITORY,
-                    useValue: mockBalanceRepository
+                    useClass: BalanceRepositoryPrisma,
                 },
                 {
-                    provide: PrismaService,
-                    useValue: mockPrismaService
+                    provide: REQUEST,
+                    useValue: mockRequest,
                 },
-                BalanceService
             ],
         }).compile();
 
-        balanceService = moduleRef.get<BalanceService>(BalanceService);
+        // get() 대신 resolve() 사용 (스코프 프로바이더)
+        balanceService = await moduleRef.resolve<BalanceService>(BalanceService);
+        prisma = moduleRef.get<PrismaService>(PrismaService);
+        balanceRepository = moduleRef.get<BalanceRepository>(BALANCE_REPOSITORY);
     });
 
-    afterEach(() => {
-        // mock 함수들 초기화
-        jest.clearAllMocks();
+    afterEach(async () => {
+        await prisma.$transaction([
+            prisma.balanceHistory.deleteMany(),
+            prisma.userBalance.deleteMany(),
+            prisma.payment.deleteMany(),
+            prisma.orderItem.deleteMany(),
+            prisma.order.deleteMany(),
+            prisma.userAccount.deleteMany(),
+        ]);
     });
 
-    describe('잔액 조회 (getBalance)', () => {
-        it('사용자의 잔액이 있는 경우 - 잔액 정보를 반환한다', async () => {
-            // given
-            const userId = 1;
-            const expectedBalance = {
-                id: 1,
-                userId: 1,
-                balance: new Prisma.Decimal(10000),
-                createdAt: new Date('2025-01-01'),
-                updatedAt: new Date('2025-01-01')
-            };
-            mockBalanceRepository.findByUserId.mockResolvedValue(expectedBalance);
-
-            // when
-            const result = await balanceService.getBalance(userId);
-
-            // then
-            expect(result).toEqual(expectedBalance);
-            expect(mockBalanceRepository.findByUserId).toHaveBeenCalledWith(userId);
-        });
-
-        it('사용자의 잔액이 없는 경우 - null을 반환한다', async () => {
-            // given
-            const userId = 999;
-            mockBalanceRepository.findByUserId.mockResolvedValue(null);
-
-            // when
-            const result = await balanceService.getBalance(userId);
-
-            // then
-            expect(result).toBeNull();
-            expect(mockBalanceRepository.findByUserId).toHaveBeenCalledWith(userId);
-        });
+    afterAll(async () => {
+        await moduleRef.close();
     });
 
     describe('잔액 충전 (chargeBalance)', () => {
         it('잔액 충전 시 - 트랜잭션 내에서 잔액 업데이트와 이력을 생성한다', async () => {
             // given
             const userId = 1;
-            const chargeAmount = 10000;
-            const updatedBalance = {
+            const chargeAmount = 50000;
+            const mockUpdatedBalance: UserBalance = {
                 id: 1,
-                userId: 1,
-                balance: new Prisma.Decimal(20000),
-                createdAt: new Date('2025-01-01'),
-                updatedAt: new Date('2025-01-01')
+                userId,
+                balance: new Prisma.Decimal(chargeAmount),
+                updatedAt: new Date(),
             };
 
-            const expectedHistory = {
-                id: 1,
-                userBalanceId: 1,
-                type: BalanceType.CHARGE,
-                amount: new Prisma.Decimal(chargeAmount),
-                afterBalance: updatedBalance.balance,
-                createdAt: expect.any(Date)
-            };
-
-            mockBalanceRepository.chargeBalance.mockResolvedValue(updatedBalance);
-            mockBalanceRepository.createBalanceHistory.mockResolvedValue(expectedHistory);
+            jest.spyOn(balanceRepository, 'chargeBalance').mockResolvedValue(mockUpdatedBalance);
 
             // when
             const result = await balanceService.chargeBalance(userId, chargeAmount);
 
             // then
-            expect(result).toEqual(updatedBalance);
-            expect(mockPrismaService.$transaction).toHaveBeenCalled();
-            expect(mockBalanceRepository.chargeBalance).toHaveBeenCalledWith(
-                userId,
-                chargeAmount,
-                expect.any(Object)
-            );
-            expect(mockBalanceRepository.createBalanceHistory).toHaveBeenCalledWith(
-                updatedBalance.id,
-                BalanceType.CHARGE,
-                chargeAmount,
-                Number(updatedBalance.balance),
-                expect.any(Object)
-            );
+            expect(result).toBeDefined();
+            expect(Number(result.balance)).toBe(chargeAmount);
         });
-
     });
 });

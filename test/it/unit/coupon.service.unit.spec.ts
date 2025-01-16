@@ -1,4 +1,3 @@
-// test/it/coupon/coupon.service.unit.spec.ts
 import { Test } from '@nestjs/testing';
 import { CouponService } from 'src/domain/coupon/service/coupon.service';
 import { CouponRepository } from 'src/domain/coupon/repository/coupon.repository';
