@@ -3,10 +3,11 @@ import { CouponService } from "src/domain/coupon/service/coupon.service";
 import { FcfsCouponDetailResponse } from "src/domain/coupon/dto/fcfs-coupon-detail.dto";
 import { CouponPageResponse } from "src/domain/coupon/dto/coupon_page_response.dto";
 import { ApiBody, ApiHeader, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { BadRequestException, Body, Controller, Get, Headers, Param, Post, Query, UseGuards } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Get, Headers, Param, Post, Query, UseGuards, UseInterceptors } from "@nestjs/common";
 import { UserCoupon } from "@prisma/client";
 import { JwtAuthGuard } from "src/common/guards/jwt-auth.guard";
 import { PessimisticLock } from "src/common/decorators/pessimistic-lock.decorator";
+import { ParseUserIdInterceptor } from "src/common/interceptors/parse-user-id.interceptor";
 
 @ApiTags('쿠폰')
 @Controller("coupons")
@@ -51,6 +52,7 @@ export class CouponController {
     @ApiResponse({ status: 400, description: '이미 발급된 쿠폰', schema: { example: { message: "이미 발급된 쿠폰입니다.", error: "Bad Request", statusCode: 400 } } })
     @ApiResponse({ status: 401, description: '인증 실패', schema: { example: { message: "잘못된 테스트 토큰입니다.", error: "Unauthorized", statusCode: 401 } } })
     @UseGuards(JwtAuthGuard)
+    @UseInterceptors(ParseUserIdInterceptor)
     @PessimisticLock({resourceType: 'FcfsCoupon', noWait: false})
     @Post("fcfs/:id/issue")
     async issueCoupon(
@@ -69,6 +71,7 @@ export class CouponController {
     @ApiQuery({ name: 'page', required: false, description: '페이지 번호' })
     @ApiQuery({ name: 'limit', required: false, description: '페이지당 항목 수' })
     @ApiResponse({ status: 200, description: '사용자 쿠폰 목록 조회 성공' })
+    @UseInterceptors(ParseUserIdInterceptor)
     @Get('my')
     async getMyCoupons(
         @Query('userId') userId: number,

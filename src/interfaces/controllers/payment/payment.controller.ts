@@ -1,13 +1,15 @@
-import { Controller, Post, Body, Get, Query, Param, UseGuards, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Param, UseGuards, BadRequestException, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery, ApiHeader } from '@nestjs/swagger';
 import { PaymentService } from 'src/domain/payment/service/payment.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { PessimisticLock } from 'src/common/decorators/pessimistic-lock.decorator';
 import { Payment } from '@prisma/client';
+import { ParseUserIdInterceptor } from 'src/common/interceptors/parse-user-id.interceptor';
 
 @ApiTags('결제')
 @Controller('payments')
 @UseGuards(JwtAuthGuard)
+@UseInterceptors(ParseUserIdInterceptor)
 @ApiHeader({ name: 'x-bypass-token', required: true, description: '인증 토큰 (temp bypass key: happy-world-token)', schema: { type: 'string' } })
 export class PaymentController {
     constructor(private readonly paymentService: PaymentService) {}

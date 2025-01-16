@@ -5,6 +5,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { OrderStatus } from '@prisma/client';
 import { PessimisticLockInterceptor } from 'src/common/interceptors/pessimistic-lock.interceptor';
 import { CreateOrderDto } from 'src/interfaces/dto/order.dto';
+import { ParseUserIdInterceptor } from 'src/common/interceptors/parse-user-id.interceptor';
 
 @ApiTags('주문')
 @Controller('order')
@@ -17,6 +18,7 @@ export class OrderController {
     @ApiBody({ schema: { example: { items: [{ productId: 1, variantId: 1, quantity: 2 }], couponId: 1}}})
     @ApiResponse({ status: 201, schema: { example: { id: 1, userId: 1, totalAmount: 50000, discountAmount: 5000, finalAmount: 45000, status: OrderStatus.PENDING, items: [] }}})
     @UseGuards(JwtAuthGuard)
+    @UseInterceptors(ParseUserIdInterceptor)
     @UseInterceptors(PessimisticLockInterceptor)
     @Post(':userId')
     async createOrder(

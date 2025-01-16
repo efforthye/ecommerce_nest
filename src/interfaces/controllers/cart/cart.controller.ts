@@ -1,11 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards, Headers } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards, Headers, UseInterceptors } from "@nestjs/common";
 import { ApiOperation, ApiTags, ApiResponse, ApiBody, ApiHeader, ApiParam } from "@nestjs/swagger";
 import { AddToCartDto, UpdateCartDto } from "../../dto/cart.dto";
 import { CartService } from "src/domain/cart/service/cart.service";
 import { JwtAuthGuard } from "src/common/guards/jwt-auth.guard";
+import { ParseUserIdInterceptor } from "src/common/interceptors/parse-user-id.interceptor";
 
 @Controller('cart')
 @ApiTags('장바구니')
+@UseInterceptors(ParseUserIdInterceptor)
 export class CartController {
     constructor(private readonly cartService: CartService) {}
 
