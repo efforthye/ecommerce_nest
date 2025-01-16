@@ -19,6 +19,7 @@ import { ConfigModule } from "@nestjs/config";
 import * as Joi from 'joi';
 import { DatabaseConfig } from "./infrastructure/database/database.config";
 import { LoggerModule } from "./infrastructure/logging/logger.module";
+import { CartModule } from "./domain/cart/cart.module";
 
 @Module({
   imports: [
@@ -41,7 +42,8 @@ import { LoggerModule } from "./infrastructure/logging/logger.module";
     OrderModule,
     PaymentModule,
     CouponModule,
-    LoggerModule
+    LoggerModule,
+    CartModule
   ],
   controllers: [
     CouponController,
