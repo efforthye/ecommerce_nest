@@ -1,11 +1,12 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PaymentRepository } from '../repository/payment.repository';
-import { PAYMENT_REPOSITORY } from 'src/common/constants/repository.constants';
+import { PAYMENT_REPOSITORY } from 'src/common/constants/app.constants';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { OrderService } from '../../order/service/order.service';
 import { BalanceService } from '../../balance/service/balance.service';
 import { PaymentStatus, Prisma } from '@prisma/client';
 import { PaginatedPaymentResponse, PaymentWithOrder } from '../types/payment.types';
+import { PaymentStatisticsService } from './payment-statistics.service';
 
 @Injectable()
 export class PaymentService {
@@ -14,18 +15,13 @@ export class PaymentService {
         private readonly paymentRepository: PaymentRepository,
         private readonly orderService: OrderService,
         private readonly balanceService: BalanceService,
+        private readonly statisticsService: PaymentStatisticsService,
         private readonly prisma: PrismaService
     ) {}
 
     // 주문에 대한 결제 처리
     async processPayment(userId: number, orderId: number) {
         return await this.prisma.$transaction(async (tx) => {
-            // 기존 결제 내역 확인
-            const existingPayment = await this.paymentRepository.findPaymentWithOrderByOrderId(orderId);
-            if (existingPayment) {
-                throw new BadRequestException('Payment already exists for this order');
-            }
-
             // 주문 정보 조회 및 검증
             const order = await this.orderService.findOrderById(orderId);
             if (!order) {
@@ -35,39 +31,114 @@ export class PaymentService {
                 throw new BadRequestException('Unauthorized access to order');
             }
             if (order.status === 'PAID') {
-                throw new BadRequestException('Order is already paid');
+                throw new BadRequestException(`Order(${orderId})는 이미 결제가 완료된 주문입니다.`);
             }
             if (order.status === 'CANCELLED') {
                 throw new BadRequestException('Cannot pay for cancelled order');
             }
 
-            // 잔액 확인
-            const balance = await this.balanceService.getBalance(userId);
-            if (!balance || balance.balance < order.finalAmount) {
-                throw new BadRequestException('Insufficient balance');
+            // 기존 결제 내역 확인
+            const existingPayment = await this.paymentRepository.findPaymentWithOrderByOrderId(orderId);
+            if (existingPayment) {
+                throw new BadRequestException('Payment already exists for this order');
             }
 
-            // 잔액 차감
-            await this.balanceService.chargeBalance(
-                userId,
-                -Number(order.finalAmount)
-            );
+            // 사용자 잔액 조회 및 검증
+            const userBalance = await tx.userBalance.findUnique({
+                where: { userId },
+                select: { balance: true }
+            });
+
+            if (!userBalance) {
+                throw new BadRequestException('User balance not found');
+            }
+
+            if (Number(userBalance.balance) < Number(order.finalAmount)) {
+                throw new BadRequestException(
+                    `Insufficient balance. Required: ${order.finalAmount}, Current: ${userBalance.balance}`
+                );
+            }
+
+            // 주문 상품 재고 확인 및 차감
+            const orderItems = await tx.orderItem.findMany({
+                where: { orderId },
+                include: { productVariant: true }
+            });
+
+            for (const item of orderItems) {
+                if (item.productVariant.stockQuantity < item.quantity) {
+                    throw new BadRequestException(
+                        `Insufficient stock for product variant ${item.optionVariantId}. Required: ${item.quantity}, Available: ${item.productVariant.stockQuantity}`
+                    );
+                }
+
+                await tx.productVariant.update({
+                    where: { id: item.optionVariantId },
+                    data: {
+                        stockQuantity: {
+                            decrement: item.quantity
+                        }
+                    }
+                });
+            }
+
+            // PG사 결제 승인 요청 모의 처리
+            const pgTransactionId = `BAL_${Date.now()}_${orderId}`;
+            const pgResponse = await this.mockPgApproval(pgTransactionId);
+            if (!pgResponse.success) {
+                throw new BadRequestException('PG payment approval failed');
+            }
+
+            // 잔액 차감 및 이력 생성
+            await tx.userBalance.update({
+                where: { userId },
+                data: {
+                    balance: {
+                        decrement: Number(order.finalAmount)
+                    },
+                    balanceHistory: {
+                        create: {
+                            type: 'USE',
+                            amount: order.finalAmount,
+                            afterBalance: new Prisma.Decimal(Number(userBalance.balance)).minus(Number(order.finalAmount))
+                        }
+                    }
+                }
+            });
 
             // 결제 정보 생성
             const payment = await this.paymentRepository.createPayment({
                 orderId,
                 userId,
                 paymentMethod: 'BALANCE',
-                amount: Number(order.finalAmount),
+                amount: order.finalAmount,
                 status: PaymentStatus.COMPLETED,
-                pgTransactionId: `BAL_${Date.now()}_${orderId}`
+                pgTransactionId
             }, tx);
 
             // 주문 상태 업데이트
-            await this.orderService.updateOrderStatus(orderId, 'PAID');
+            await tx.order.update({
+                where: { id: orderId },
+                data: { 
+                    status: 'PAID',
+                    paidAt: new Date()
+                }
+            });
+
+            // 결제 통계 업데이트 (비동기)
+            this.statisticsService.updateStatistics(payment).catch(console.error);
 
             return payment;
+        }, {
+            timeout: 10000, // 10초 타임아웃
+            isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead // 격리 수준 설정
         });
+    }
+
+    // PG사 결제 승인 모의 처리
+    private async mockPgApproval(txId: string): Promise<{ success: boolean }> {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return { success: true };
     }
 
     // 결제 아이디로 결제 정보 조회
@@ -84,9 +155,7 @@ export class PaymentService {
         return payment;
     }
 
-    /**
-     * 결제 상세 정보를 조회합니다.
-     */
+    // 특정 결제 상세 정보 조회
     async getPaymentDetail(userId: number, paymentId: number): Promise<PaymentWithOrder> {
         const payment = await this.getPaymentById(paymentId);
         if (payment.userId !== userId) {
@@ -95,9 +164,7 @@ export class PaymentService {
         return payment;
     }
 
-    /** 
-     * 사용자의 결제 내역을 조회합니다.
-     */
+    // 유저의 결제 내역 조회
     async getUserPayments(
         userId: number,
         pagination: { page: number; pageSize: number }
@@ -118,46 +185,80 @@ export class PaymentService {
         };
     }
 
-    // 결제 상태 업데이트
-    async updatePaymentStatus(id: number, status: PaymentStatus) {
-        return await this.prisma.$transaction(async (tx) => {
-            const payment = await this.paymentRepository.findPaymentWithOrderById(id);
-            if (!payment) throw new NotFoundException('Payment not found');
-            if (payment.status === PaymentStatus.COMPLETED) throw new BadRequestException('Cannot update completed payment');
-
-            // 결제 취소시 잔액 환불 처리
-            if (status === PaymentStatus.CANCELLED && payment.status !== PaymentStatus.CANCELLED) {
-                await this.balanceService.chargeBalance(
-                    payment.userId,
-                    Number(payment.amount)
-                );
-                
-                await this.orderService.updateOrderStatus(
-                    payment.orderId,
-                    'CANCELLED'
-                );
-            }
-
-            return await this.paymentRepository.updatePaymentStatus(id, status, tx);
-        });
-    }
-
     // 결제 취소
     async cancelPayment(userId: number, paymentId: number) {
-        const payment = await this.getPaymentById(paymentId);
-        
-        if (payment.userId !== userId) {
-            throw new BadRequestException('Unauthorized access to payment');
-        }
+        return await this.prisma.$transaction(async (tx) => {
+            // 결제 정보 조회 및 검증
+            const payment = await this.getPaymentById(paymentId);
+            
+            if (payment.userId !== userId) {
+                throw new BadRequestException('Unauthorized access to payment');
+            }
+            if (payment.status !== PaymentStatus.COMPLETED) {
+                throw new BadRequestException('Can only cancel completed payments');
+            }
 
-        return await this.updatePaymentStatus(paymentId, PaymentStatus.CANCELLED);
-    }
+            // 사용자 잔액 조회
+            const userBalance = await tx.userBalance.findUnique({
+                where: { userId: payment.userId },
+                select: { balance: true }
+            });
 
-    // 사용자의 결제 접근 권한 검증
-    async validateUserPayment(userId: number, paymentId: number): Promise<void> {
-        const payment = await this.paymentRepository.findPaymentWithOrderById(paymentId);
-        if (!payment || payment.userId !== userId) {
-            throw new BadRequestException('Unauthorized access to payment');
-        }
+            if (!userBalance) {
+                throw new BadRequestException('User balance not found');
+            }
+
+            // 결제 상태 변경
+            const updatedPayment = await this.paymentRepository.updatePaymentStatus(
+                paymentId, 
+                PaymentStatus.CANCELLED,
+                tx
+            );
+
+            // 재고 복구
+            const orderItems = await tx.orderItem.findMany({
+                where: { orderId: payment.orderId },
+                include: { productVariant: true }
+            });
+
+            for (const item of orderItems) {
+                await tx.productVariant.update({
+                    where: { id: item.optionVariantId },
+                    data: {
+                        stockQuantity: {
+                            increment: item.quantity
+                        }
+                    }
+                });
+            }
+
+            // 잔액 환불 및 이력 생성
+            await tx.userBalance.update({
+                where: { userId: payment.userId },
+                data: {
+                    balance: {
+                        increment: Number(payment.amount)
+                    },
+                    balanceHistory: {
+                        create: {
+                            type: 'REFUND',
+                            amount: payment.amount,
+                            afterBalance: new Prisma.Decimal(Number(userBalance.balance)).add(Number(payment.amount))
+                        }
+                    }
+                }
+            });
+            
+            // 주문 상태 업데이트
+            await tx.order.update({
+                where: { id: payment.orderId },
+                data: { status: 'CANCELLED' }
+            });
+
+            return updatedPayment;
+        }, {
+            timeout: 10000,
+            isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead
+        });
     }
 }

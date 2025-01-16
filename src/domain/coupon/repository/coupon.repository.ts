@@ -1,4 +1,4 @@
-import { Coupon, FcfsCoupon, Prisma, UserCoupon } from "@prisma/client";
+import { FcfsCoupon, Prisma, UserCoupon } from "@prisma/client";
 import { PaginationDto } from "../dto/pagination.dto";
 import { CreateUserCouponInput, FcfsCouponWithCoupon } from "../types/coupon.types";
 

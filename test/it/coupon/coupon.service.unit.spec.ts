@@ -2,7 +2,7 @@
 import { Test } from '@nestjs/testing';
 import { CouponService } from 'src/domain/coupon/service/coupon.service';
 import { CouponRepository } from 'src/domain/coupon/repository/coupon.repository';
-import { COUPON_REPOSITORY } from 'src/common/constants/repository.constants';
+import { COUPON_REPOSITORY } from 'src/common/constants/app.constants';
 import { PaginationDto } from 'src/domain/coupon/dto/pagination.dto';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';

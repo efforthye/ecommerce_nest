@@ -1,16 +1,15 @@
-// payment/repository/payment.repository.impl.ts
 import { Injectable } from '@nestjs/common';
 import { Payment, PaymentStatus, Prisma } from '@prisma/client';
-import { PaymentRepository } from 'src/domain/payment/repository/payment.repository';
-import { CreatePaymentInput, PaymentWithOrder } from 'src/domain/payment/types/payment.types';
+import { PaymentRepository } from './payment.repository';
+import { PaymentWithOrder } from '../types/payment.types';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 
 @Injectable()
-export class PaymentRepositoryImpl implements PaymentRepository {
+export class PaymentRepositoryPrisma implements PaymentRepository {
     constructor(private readonly prisma: PrismaService) {}
 
     async createPayment(
-        data: CreatePaymentInput,
+        data: Prisma.PaymentUncheckedCreateInput,
         tx: Prisma.TransactionClient
     ): Promise<Payment> {
         return await tx.payment.create({ data });
@@ -39,7 +38,7 @@ export class PaymentRepositoryImpl implements PaymentRepository {
             where: { id },
             data: { 
                 status,
-                ...(status === PaymentStatus.CANCELLED ? { cancelledAt: new Date() } : {})
+                updatedAt: new Date()
             }
         });
     }
@@ -62,5 +61,26 @@ export class PaymentRepositoryImpl implements PaymentRepository {
             skip,
             take
         });
+    }
+
+    async updateOrderItemStock(
+        orderId: number, 
+        tx: Prisma.TransactionClient
+    ): Promise<void> {
+        const orderItems = await tx.orderItem.findMany({
+            where: { orderId },
+            include: { productVariant: true }
+        });
+
+        for (const item of orderItems) {
+            await tx.productVariant.update({
+                where: { id: item.optionVariantId },
+                data: {
+                    stockQuantity: {
+                        decrement: item.quantity
+                    }
+                }
+            });
+        }
     }
 }

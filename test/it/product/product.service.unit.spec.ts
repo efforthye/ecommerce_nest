@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { ProductService } from 'src/domain/product/service/product.service';
 import { ProductRepository } from 'src/domain/product/repository/product.repository';
-import { PRODUCT_REPOSITORY } from 'src/common/constants/repository.constants';
+import { PRODUCT_REPOSITORY } from 'src/common/constants/app.constants';
 import { NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
