@@ -5,21 +5,21 @@ generator client {
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
-  relationMode = "prisma" // FK 제약조건을 Prisma가 관리하도록 변경
+  relationMode = "prisma"
 }
 
-// 회원 기본 정보
+// 회원 기본 정보 
 model UserAccount {
-  id              Int               @id @default(autoincrement())
-  name            String            
-  email           String            @unique
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  userBalance     UserBalance?
-  orders          Order[]
-  userCoupons     UserCoupon[]
-  userCart        UserCart[]
-  payments        Payment[]
+  id            Int           @id @default(autoincrement())
+  name          String
+  email         String        @unique
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  userBalance   UserBalance?
+  userCoupons   UserCoupon[]
+  userCart      UserCart[]
+  orders        Order[]
+  payments      Payment[]
 
   @@index([email])
 }
@@ -51,16 +51,16 @@ model BalanceHistory {
 
 // 쿠폰 기본 정보
 model Coupon {
-  id                Int               @id @default(autoincrement())
-  name              String
-  type              String            // AMOUNT(정액) or PERCENTAGE(정률)
-  amount            Decimal
-  minOrderAmount    Decimal
-  validDays         Int
-  isFcfs           Boolean           @default(false)  // 선착순 여부
-  createdAt         DateTime          @default(now())
-  fcfsCoupons       FcfsCoupon[]
-  userCoupons       UserCoupon[]
+  id              Int           @id @default(autoincrement())
+  name            String
+  type            String        // AMOUNT(정액) or PERCENTAGE(정률)
+  amount          Decimal
+  minOrderAmount  Decimal
+  validDays       Int
+  isFcfs         Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  fcfsCoupons     FcfsCoupon[]
+  userCoupons     UserCoupon[]
 
   @@index([isFcfs])
 }
@@ -120,7 +120,7 @@ model Product {
 model ProductImage {
   id                Int             @id @default(autoincrement())
   productId         Int
-  productVariantId  Int?            // null인 경우 상품 대표이미지
+  productVariantId  Int?
   imageUrl          String
   sequence          Int
   createdAt         DateTime        @default(now())
@@ -136,7 +136,7 @@ model ProductImage {
 model ProductVariant {
   id              Int             @id @default(autoincrement())
   productId       Int
-  optionName      String          // ex) 빨강-L
+  optionName      String
   stockQuantity   Int
   price           Decimal
   createdAt       DateTime        @default(now())
@@ -209,7 +209,7 @@ model UserCart {
   @@index([optionVariantId])
 }
 
-// 결제 정보
+// 결제 정보 
 model Payment {
   id              Int             @id @default(autoincrement())
   orderId         Int
@@ -231,7 +231,7 @@ model Payment {
 
 enum OrderStatus {
   PENDING
-  PAID
+  PAID  
   SHIPPING
   DELIVERED
   CANCELLED

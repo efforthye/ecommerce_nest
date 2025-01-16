@@ -3,30 +3,58 @@ import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { PrismaClient } from '@prisma/client';
 import { ValidationPipe } from '@nestjs/common';
+import { DatabaseConfig } from './infrastructure/database/database.config';
+import { DatabaseSetup } from './infrastructure/database/database.setup';
+import { CustomLoggerService } from './infrastructure/logging/logger.service';
+import { ConfigService } from '@nestjs/config';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { mkdirSync, existsSync } from 'fs';
+import { join } from 'path';
 
 async function bootstrap() {
+  // logs 디렉토리 생성
+  const logsDir = join(process.cwd(), 'logs');
+  if (!existsSync(logsDir)) {
+      mkdirSync(logsDir);
+  }
+
   const app = await NestFactory.create(AppModule);
 
-  // Prisma Client 초기화
-  const prisma = new PrismaClient();
+  // Logger 초기화 및 전역 설정
+  const logger = await app.resolve(CustomLoggerService);
+  app.useLogger(logger);
 
   // 전역 파이프라인 정의
   app.useGlobalPipes(new ValidationPipe({ 
-    // 클라이언트로부터 받은 데이터를 자동으로 DTO에 정의된 타입으로 변환
-    transform: true, 
-    // DTO에 정의되지 않은 속성은 제거
-    whitelist: true, 
-    // DTO에 정의되지 않은 속성이 포함되어 있으면 요청 자체를 거부
-    forbidNonWhitelisted: true, 
+    transform: true, // 입력값을 DTO 클래스의 인스턴스로 변환
+    whitelist: true, // DTO에 정의되지 않은 속성 제거
+    forbidNonWhitelisted: false, // DTO에 정의되지 않은 속성이 있으면 에러
+    transformOptions: { 
+      enableImplicitConversion: true, // 암시적 타입 변환 활성화
+    },
+    skipMissingProperties: false, // 누락된 필수 속성에 대해 에러 발생
+    stopAtFirstError: true,       // 첫 번째 에러에서 중단
   }));
 
-  // Prisma와 데이터베이스 연결 확인
+  // Logger 전역 필터 적용
+  const configService = app.get(ConfigService);
+  app.useGlobalFilters(new HttpExceptionFilter(logger, configService));
+  app.useGlobalInterceptors(new LoggingInterceptor(logger));
+
+  // 데이터베이스 초기화
+    const databaseConfig = app.get(DatabaseConfig);
+    const databaseSetup = app.get(DatabaseSetup); // 인스턴스 얻기
+    await databaseSetup.initializeDatabase(databaseConfig);
+
+  // Prisma Client 초기화 및 연결
+  const prisma = new PrismaClient();
   try {
     await prisma.$connect();
-    console.log('Prisma connected to the database successfully.');
+    logger.log('Prisma connected to the database successfully.');
   } catch (error) {
-    console.error('Error connecting to the database:', error);
-    process.exit(1); // 데이터베이스 연결 실패 시 애플리케이션 종료
+    logger.error('Error connecting to the database:', error);
+    process.exit(1);
   }
 
   // Swagger 설정
@@ -45,7 +73,7 @@ async function bootstrap() {
   // 서버 종료 시 Prisma 연결 해제
   process.on('SIGINT', async () => {
     await prisma.$disconnect();
-    console.log('Prisma disconnected from the database.');
+    logger.log('Prisma disconnected from the database.');
     process.exit(0);
   });
 }

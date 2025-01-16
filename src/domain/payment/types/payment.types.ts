@@ -1,28 +1,17 @@
-import { Payment, Order, OrderItem, ProductVariant, PaymentStatus, Prisma } from '@prisma/client';
+import { Order, Payment } from '@prisma/client';
 
-export interface PaymentWithOrder extends Payment {
-    order: {
-        id: number;
-        userId: number;
-        status: string;
-        couponId: number | null;
-        totalAmount: Prisma.Decimal;
-        discountAmount: Prisma.Decimal;
-        finalAmount: Prisma.Decimal;
-        orderedAt: Date;
-        paidAt: Date | null;
-    }
-}
-
-export type CreatePaymentInput = {
+export interface CreatePaymentInput {
     orderId: number;
     userId: number;
     paymentMethod: string;
     amount: number;
-    status: PaymentStatus;
+    status: string;
     pgTransactionId: string;
-};
+}
 
+export interface PaymentWithOrder extends Payment {
+    order: Order;
+}
 
 export interface PaginatedPaymentResponse {
     total: number;
@@ -30,4 +19,11 @@ export interface PaginatedPaymentResponse {
     page: number;
     pageSize: number;
     totalPages: number;
+}
+
+export interface PaymentStatistics {
+    date: Date;
+    totalAmount: number;
+    paymentCount: number;
+    averageAmount: number;
 }

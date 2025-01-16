@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { ProductRepository } from 'src/domain/product/repository/product.repository';
-import { Product, ProductVariant, Prisma } from '@prisma/client';
+import { ProductVariant, Prisma } from '@prisma/client';
 import { ProductWithIncludes } from 'src/domain/product/repository/product.repository';
 
 @Injectable()
-export class ProductRepositoryImpl implements ProductRepository {
+export class ProductRepositoryPrisma implements ProductRepository {
     constructor(private readonly prisma: PrismaService) {}
 
     async findPopularProducts(limit: number): Promise<ProductWithIncludes[]> {
