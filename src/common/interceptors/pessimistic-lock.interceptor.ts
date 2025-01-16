@@ -1,4 +1,4 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler, BadRequestException } from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, BadRequestException, ConflictException } from '@nestjs/common';
 import { from, lastValueFrom, Observable } from 'rxjs';
 import { Reflector } from '@nestjs/core';
 import { PESSIMISTIC_LOCK_KEY } from '../constants/app.constants';
@@ -28,18 +28,26 @@ export class PessimisticLockInterceptor implements NestInterceptor {
         // 요청 파라미터에서 resourceType에 맞는 resourceId 추출
         const request = context.switchToHttp().getRequest();
         const resourceId = this.getResourceId(resourceType, request);
-        // resourceId 유효셩 검증
+        // resourceId 유효성 검증
         if (!resourceId || isNaN(Number(resourceId))) throw new BadRequestException(`Invalid ${resourceType} ID`);
 
         // 해당 프리즈마 트랜잭션 리소스에 비관적 락 적용
         return from(
             this.prisma.$transaction(async (tx) => {
-                // 락 타임아웃 설정
-                await tx.$executeRawUnsafe(`SET LOCAL lock_timeout = '${timeout}ms'`);
-                // 리소스 타입에 맞는 락 획득 SQL 쿼리 실행
-                await this.applyLock(resourceType, resourceId, tx, noWait);
-                // 다음 핸들러를 트랜잭션 내에서 실행
-                return await lastValueFrom(next.handle());
+                try {
+                    await this.applyLock(resourceType, resourceId, tx, noWait);
+                    // 트랜잭션 객체를 request에 저장
+                    request.prismaTransaction = tx;
+                    const result = await lastValueFrom(next.handle());
+                    return result;
+                } catch (error) {
+                    if (error.code === 'ER_LOCK_WAIT_TIMEOUT') {
+                        throw new ConflictException('Lock acquisition timeout');
+                    }
+                    throw error;
+                }
+            }, {
+                timeout // 트랜잭션 전체 타임아웃 설정
             })
         );
     }
@@ -69,7 +77,7 @@ export class PessimisticLockInterceptor implements NestInterceptor {
         switch (resourceType) {
             case 'Coupon':
                 await tx.$executeRawUnsafe(
-                    `SELECT * FROM "Coupon" WHERE "id" = $1 FOR UPDATE ${nowaitClause}`,
+                    `SELECT * FROM \`Coupon\` WHERE \`id\` = ? FOR UPDATE ${nowaitClause}`,
                     resourceId
                 );
                 break;
@@ -77,7 +85,7 @@ export class PessimisticLockInterceptor implements NestInterceptor {
                 // 먼저 FcfsCoupon 테이블에 락 적용
                 await tx.$executeRawUnsafe(
                     `SELECT * FROM \`FcfsCoupon\` 
-                    WHERE id = $1 
+                    WHERE id = ? 
                     AND \`stock_quantity\` > 0 
                     AND \`start_date\` <= CURRENT_TIMESTAMP 
                     AND \`end_date\` > CURRENT_TIMESTAMP 
@@ -87,16 +95,25 @@ export class PessimisticLockInterceptor implements NestInterceptor {
                 
                 // 이후 Coupon 테이블은 락 없이 조회만 수행
                 await tx.$executeRawUnsafe(
-                    `SELECT c.is_fcfs FROM \`coupon\` c 
-                     WHERE c.id = (SELECT \`coupon_id\` FROM \`FcfsCoupon\` WHERE id = $1)`,
+                    `SELECT c.is_fcfs FROM \`Coupon\` c 
+                        WHERE c.id = (SELECT \`coupon_id\` FROM \`FcfsCoupon\` WHERE id = ?)`,
                     resourceId
                 );
                 break;
             case 'UserBalance':
-                await tx.$executeRawUnsafe(
-                    `SELECT * FROM "UserBalance" WHERE "userId" = $1 FOR UPDATE ${nowaitClause}`,
-                    resourceId
-                );
+                // 잔액 존재 여부 먼저 확인
+                const balance = await tx.userBalance.findUnique({
+                    where: { userId: parseInt(resourceId, 10) },
+                    select: { id: true }
+                });
+                
+                // 기존 잔액이 있는 경우 id로 UserBalance 테이블에 락 적용
+                if (balance) {
+                    await tx.$executeRawUnsafe(
+                        `SELECT balance FROM \`UserBalance\` WHERE \`id\` = ? FOR UPDATE ${nowaitClause}`,
+                        balance.id
+                    );
+                }
                 break;
             default:
                 throw new Error(`Unknown resource type: ${resourceType}`);

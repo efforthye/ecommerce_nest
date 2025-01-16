@@ -1,7 +1,9 @@
-
-import { Controller, Get, Post, Param, Body } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import { Controller, Get, Post, Param, Body, UseGuards, UseInterceptors, Headers } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiHeader } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { BalanceService } from 'src/domain/balance/service/balance.service';
+import { PessimisticLock } from 'src/common/decorators/pessimistic-lock.decorator';
+import { PessimisticLockInterceptor } from 'src/common/interceptors/pessimistic-lock.interceptor';
 
 @ApiTags('잔액')
 @Controller('balance')
@@ -9,23 +11,28 @@ export class BalanceController {
     constructor(private readonly balanceService: BalanceService) {}
 
     @ApiOperation({ summary: '유저 잔액 조회' })
+    @ApiHeader({ name: 'x-bypass-token', required: true, description: '인증 토큰 (temp bypass key: happy-world-token)', schema: { type: 'string' } })
     @ApiParam({ name: 'userId', description: '유저 아이디' })
-    @ApiResponse({ status: 200, schema: { example: { userId: 1, balance: 10000 }}})
+    @ApiResponse({ status: 200, schema: { example: { id: 1, userId: 1, balance: 10000, updatedAt: '2024-01-16T12:00:00.000Z' } } })
+    @ApiResponse({ status: 401, description: '인증 실패', schema: { example: { message: "잘못된 테스트 토큰입니다.", error: "Unauthorized", statusCode: 401 } } })
+    @UseGuards(JwtAuthGuard)
     @Get(':userId')
-    async getBalance(@Param('userId') userId: string) {
+    async getBalance(@Headers('x-bypass-token') bypassToken: string, @Param('userId') userId: string) {
         const id = parseInt(userId, 10);
         return this.balanceService.getBalance(id);
     }
 
     @ApiOperation({ summary: '유저 잔액 충전' })
-    @ApiParam({ name: 'userId', description: '유저 아이디' })
-    @ApiBody({ schema: { example: { amount: 10000 }}})
-    @ApiResponse({ status: 200, schema: { example: { userId: 1, balance: 20000, chargedAmount: 10000 }}})
+    @ApiHeader({ name: 'x-bypass-token', required: true, description: '인증 토큰 (temp bypass key: happy-world-token)', schema: { type: 'string' } })
+    @ApiParam({ name: 'userId', description: '유저 아이디' }) 
+    @ApiBody({ schema: { example: { amount: 10000 } } })
+    @ApiResponse({ status: 200, schema: { example: { id: 1, userId: 1, balance: 20000, updatedAt: '2024-01-16T12:00:00.000Z', balanceHistory: { id: 1, userBalanceId: 1, type: 'CHARGE', amount: 10000, afterBalance: 20000, createdAt: '2024-01-16T12:00:00.000Z' } } } })
+    @ApiResponse({ status: 401, description: '인증 실패', schema: { example: { message: "잘못된 테스트 토큰입니다.", error: "Unauthorized", statusCode: 401 } } })
+    @UseGuards(JwtAuthGuard)
+    @UseInterceptors(PessimisticLockInterceptor)
+    @PessimisticLock({ resourceType: 'UserBalance', timeout: 5000, noWait: true })
     @Post(':userId/charge')
-    async chargeBalance(
-        @Param('userId') userId: string,
-        @Body('amount') amount: number,
-    ) {
+    async chargeBalance(@Headers('x-bypass-token') bypassToken: string, @Param('userId') userId: string, @Body('amount') amount: number) {
         const id = parseInt(userId, 10);
         return this.balanceService.chargeBalance(id, amount);
     }
