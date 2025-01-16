@@ -1,18 +1,32 @@
+import { Injectable } from '@nestjs/common';
 import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PrismaClient } from '@prisma/client';
+import { CustomLoggerService } from '../logging/logger.service';
+import { ConfigService } from '@nestjs/config';
 
 const INIT_FLAG_FILE = 'prisma/.db-initialized';
 
+@Injectable()
 export class DatabaseSetup {
-    private static async runPrismaCommand(command: string): Promise<void> {
+    private readonly prisma: PrismaClient;
+
+    constructor(
+        private readonly logger: CustomLoggerService,
+        private readonly configService: ConfigService
+    ) {
+        this.logger.setTarget(DatabaseSetup.name);
+        this.prisma = new PrismaClient();
+    }
+
+    private async runPrismaCommand(command: string): Promise<void> {
         return new Promise((resolve, reject) => {
             const [cmd, ...args] = command.split(' ');
             const childProcess = spawn(cmd, args, { stdio: 'inherit' });
 
             childProcess.on('error', (error) => {
-                console.error(`Command failed: ${command}`);
+                this.logger.error(`Command failed: ${command}`, error.stack);
                 reject(error);
             });
 
@@ -26,20 +40,18 @@ export class DatabaseSetup {
         });
     }
 
-    private static async isInitialized(): Promise<boolean> {
+    private async isInitialized(): Promise<boolean> {
         return fs.existsSync(path.join(process.cwd(), INIT_FLAG_FILE));
     }
 
-    private static async markAsInitialized(): Promise<void> {
+    private async markAsInitialized(): Promise<void> {
         fs.writeFileSync(path.join(process.cwd(), INIT_FLAG_FILE), new Date().toISOString());
     }
 
-    private static async runSeed(): Promise<void> {
-        const prisma = new PrismaClient();
-        
+    private async runSeed(): Promise<void> {
         try {
             // 유저 데이터 생성
-            const users = await prisma.userAccount.createMany({
+            const users = await this.prisma.userAccount.createMany({
                 data: [
                     { name: '천동민', email: 'hminimi@gmail.com', createdAt: new Date(), updatedAt: new Date() },
                     { name: '박혜림', email: 'efforthye@gmail.com', createdAt: new Date(), updatedAt: new Date() },
@@ -47,10 +59,10 @@ export class DatabaseSetup {
                 ],
                 skipDuplicates: true,
             });
-            console.log('Created users:', users);
+            this.logger.log(`Created ${users.count} users`);
     
             // 쿠폰 데이터 생성
-            const coupons = await prisma.coupon.createMany({
+            const coupons = await this.prisma.coupon.createMany({
                 data: [
                     {
                         name: '10% 할인쿠폰',
@@ -73,10 +85,10 @@ export class DatabaseSetup {
                 ],
                 skipDuplicates: true,
             });
-            console.log('Created coupons:', coupons);
+            this.logger.log(`Created ${coupons.count} coupons`);
     
             // 선착순 쿠폰 데이터 생성
-            const fcfsCoupons = await prisma.fcfsCoupon.createMany({
+            const fcfsCoupons = await this.prisma.fcfsCoupon.createMany({
                 data: [
                     {
                         couponId: 1,
@@ -97,10 +109,10 @@ export class DatabaseSetup {
                 ],
                 skipDuplicates: true,
             });
-            console.log('Created FCFS coupons:', fcfsCoupons);
+            this.logger.log(`Created ${fcfsCoupons.count} FCFS coupons`);
     
             // 상품 데이터 생성
-            const products = await prisma.product.createMany({
+            const products = await this.prisma.product.createMany({
                 data: [
                     {
                         name: '아이폰17pro',
@@ -129,10 +141,10 @@ export class DatabaseSetup {
                 ],
                 skipDuplicates: true,
             });
-            console.log('Created products:', products);
+            this.logger.log(`Created ${products.count} products`);
 
             // 상품 옵션 데이터 생성
-            const productVariants = await prisma.productVariant.createMany({
+            const productVariants = await this.prisma.productVariant.createMany({
                 data: [
                     // 아이폰17pro 옵션
                     {
@@ -204,10 +216,10 @@ export class DatabaseSetup {
                 ],
                 skipDuplicates: true,
             });
-            console.log('Created product variants:', productVariants);
+            this.logger.log(`Created ${productVariants.count} product variants`);
 
             // 상품 이미지 데이터 생성
-            const productImages = await prisma.productImage.createMany({
+            const productImages = await this.prisma.productImage.createMany({
                 data: [
                     // 아이폰17pro 이미지
                     {
@@ -255,10 +267,10 @@ export class DatabaseSetup {
                 ],
                 skipDuplicates: true,
             });
-            console.log('Created product images:', productImages);
+            this.logger.log(`Created ${productImages.count} product images`);
     
             // 유저 잔액 데이터 생성
-            const balances = await prisma.userBalance.createMany({
+            const balances = await this.prisma.userBalance.createMany({
                 data: [
                     { userId: 1, balance: 10000, updatedAt: new Date() },
                     { userId: 2, balance: 5000, updatedAt: new Date() },
@@ -266,20 +278,20 @@ export class DatabaseSetup {
                 ],
                 skipDuplicates: true,
             });
-            console.log('Created balances:', balances);
+            this.logger.log(`Created ${balances.count} balances`);
     
         } catch (error) {
-            console.error('Seed execution failed:', error);
+            this.logger.error('Seed execution failed:', error);
             throw error;
         } finally {
-            await prisma.$disconnect();
+            await this.prisma.$disconnect();
         }
     }
 
-    static async initializeDatabase(databaseConfig: any): Promise<void> {
+    async initializeDatabase(databaseConfig: any): Promise<void> {
         try {
             if (await this.isInitialized()) {
-                console.log('Database already initialized, skipping setup...');
+                this.logger.log('Database already initialized, skipping setup...');
                 return;
             }
 
@@ -287,23 +299,23 @@ export class DatabaseSetup {
             await databaseConfig.createDatabase();
 
             // 프리즈마 마이그레이션 실행
-            console.log('Starting Prisma migrations...');
-            const migrationCommand = process.env.NODE_ENV === 'production'
+            this.logger.log('Starting Prisma migrations...');
+            const migrationCommand = this.configService.get('NODE_ENV') === 'production'
                 ? 'npx prisma migrate deploy'
                 : 'npx prisma migrate dev --name init';
-            console.log(`Executing command: ${migrationCommand}`);
+            this.logger.log(`Executing command: ${migrationCommand}`);
             await this.runPrismaCommand(migrationCommand);
-            console.log('Prisma migrations completed.');
+            this.logger.log('Prisma migrations completed.');
 
             // 시드 데이터 생성
-            console.log('Running seed data...');
+            this.logger.log('Running seed data...');
             await this.runSeed();
-            console.log('Seed data created successfully.');
+            this.logger.log('Seed data created successfully.');
 
             await this.markAsInitialized();
-            console.log('Initial database setup completed successfully.');
+            this.logger.log('Initial database setup completed successfully.');
         } catch (error) {
-            console.error('Database setup failed:', error);
+            this.logger.error('Database setup failed:', error);
             process.exit(1);
         }
     }
