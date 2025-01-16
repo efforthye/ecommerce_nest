@@ -4,7 +4,7 @@ import { UserBalance, BalanceHistory, Prisma, BalanceType } from '@prisma/client
 import { BalanceRepository } from 'src/domain/balance/repository/balance.repository';
 
 @Injectable()
-export class BalanceRepositoryImpl implements BalanceRepository {
+export class BalanceRepositoryPrisma implements BalanceRepository {
     constructor(private readonly prisma: PrismaService) {}
 
     async findByUserId(userId: number): Promise<UserBalance | null> {
