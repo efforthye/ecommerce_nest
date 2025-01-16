@@ -6,6 +6,12 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
+  "moduleNameMapper": {
+    "^@/(.*)$": "<rootDir>/src/$1"
+  },
   "globalSetup": "./test/it/setup.ts",
-  "globalTeardown": "./test/it/down.ts"
+  "globalTeardown": "./test/it/down.ts",
+  "setupFilesAfterEnv": ["./test/it/jest.setup.ts"],
+  "maxWorkers": 1,
+  "testTimeout": 30000
 }

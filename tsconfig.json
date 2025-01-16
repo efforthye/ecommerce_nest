@@ -22,8 +22,11 @@
         "transform": "typia/lib/transform",
         "include": ["src/**/*.ts"]
       }
-    ]
+    ],
+    "types": ["node", "jest"],
+    "esModuleInterop": true,
+    "allowJs": true
   },
   "include": ["src/**/*", "test/**/*", "prisma/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist"],
 }
