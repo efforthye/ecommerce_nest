@@ -32,7 +32,7 @@ export class BalanceController {
     @UseGuards(JwtAuthGuard)
     @UseInterceptors(PessimisticLockInterceptor)
     @UseInterceptors(ParseUserIdInterceptor)
-    @PessimisticLock({ resourceType: 'UserBalance', timeout: 5000, noWait: true })
+    @PessimisticLock({ resourceType: 'UserBalance', timeout: 5000, noWait: false })
     @Post(':userId/charge')
     async chargeBalance(@Headers('x-bypass-token') bypassToken: string, @Param('userId') userId: number, @Body('amount') amount: number) {
         return this.balanceService.chargeBalance(userId, amount);

@@ -11,12 +11,12 @@ describe('상품 서비스 테스트', () => {
 
     beforeEach(async () => {
         // 각 테스트 전에 Repository mock 초기화
-    mockProductRepository = {
-        findPopularProducts: jest.fn(),
-        findById: jest.fn(),
-        findVariantById: jest.fn(),
-        decreaseVariantStock: jest.fn(),
-    };
+        mockProductRepository = {
+            findPopularProducts: jest.fn(),
+            findById: jest.fn(),
+            findVariantById: jest.fn(),
+            decreaseVariantStock: jest.fn(),
+        };
 
         // 테스트 모듈 설정
         const moduleRef = await Test.createTestingModule({
