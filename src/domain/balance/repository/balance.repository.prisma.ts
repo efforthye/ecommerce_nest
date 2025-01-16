@@ -19,18 +19,27 @@ export class BalanceRepositoryPrisma implements BalanceRepository {
         tx?: Prisma.TransactionClient
     ): Promise<UserBalance> {
         const prisma = tx || this.prisma;
-        return prisma.userBalance.upsert({
+        const existingBalance = await prisma.userBalance.findUnique({
             where: { userId },
-            create: {
+        });
+    
+        if (existingBalance) {
+            return prisma.userBalance.update({
+                where: { userId },
+                data: {
+                    balance: { increment: amount },
+                },
+            });
+        }
+    
+        return prisma.userBalance.create({
+            data: {
                 userId,
                 balance: amount,
             },
-            update: {
-                balance: { increment: amount },
-            },
         });
     }
-
+    
     async createBalanceHistory(
         userBalanceId: number,
         type: BalanceType,
