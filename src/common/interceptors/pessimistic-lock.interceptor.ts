@@ -60,6 +60,8 @@ export class PessimisticLockInterceptor implements NestInterceptor {
                 return request.params.id;
             case 'UserBalance':
                 return request.params.userId;
+            case 'Payment':
+                return request.params.id || request.body.orderId;
             default:
                 throw new Error(`Unknown resource type: ${resourceType}`);
         }
@@ -112,6 +114,33 @@ export class PessimisticLockInterceptor implements NestInterceptor {
                     await tx.$executeRawUnsafe(
                         `SELECT balance FROM \`UserBalance\` WHERE \`id\` = ? FOR UPDATE ${nowaitClause}`,
                         balance.id
+                    );
+                }
+                break;
+            case 'Payment':
+                // Payment 조회
+                const payment = await tx.payment.findUnique({
+                    where: { id: parseInt(resourceId, 10) },
+                    select: { orderId: true }
+                });
+
+                if (payment) {
+                    // Payment와 연관된 Order에 락 적용
+                    await tx.$executeRawUnsafe(
+                        `SELECT * FROM \`Order\` 
+                        WHERE id = ? 
+                        AND status NOT IN ('PAID', 'CANCELLED')
+                        FOR UPDATE ${nowaitClause}`,
+                        payment.orderId
+                    );
+                } else {
+                    // 결제 생성 시에는 Order에 직접 락 적용
+                    await tx.$executeRawUnsafe(
+                        `SELECT * FROM \`Order\` 
+                        WHERE id = ? 
+                        AND status NOT IN ('PAID', 'CANCELLED')
+                        FOR UPDATE ${nowaitClause}`,
+                        resourceId
                     );
                 }
                 break;

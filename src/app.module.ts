@@ -9,7 +9,6 @@ import { TestController } from "./interfaces/controllers/test/test.controller";
 import { CouponModule } from "./domain/coupon/coupon.module";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 import { ProductModule } from "./domain/product/product.module";
-import { CouponService } from "./domain/coupon/service/coupon.service";
 import { BalanceModule } from "./domain/balance/balance.module";
 import { BalanceService } from "./domain/balance/service/balance.service";
 import { OrderModule } from "./domain/order/order.module";
