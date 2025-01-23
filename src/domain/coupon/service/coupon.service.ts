@@ -2,7 +2,6 @@ import { Injectable, BadRequestException, NotFoundException, Inject, ConflictExc
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { COUPON_REPOSITORY } from 'src/common/constants/app.constants';
 import { CouponStatus, Prisma } from '@prisma/client';
-import { CreateUserCouponInput, FcfsCouponWithCoupon } from '../types/coupon.types';
 import { PaginationDto } from '../dto/pagination.dto';
 import { CouponRepository } from '../repository/coupon.repository';
 import { RedisRedlock } from 'src/infrastructure/redis/redis.redlock';

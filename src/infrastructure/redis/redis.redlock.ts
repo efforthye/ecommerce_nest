@@ -10,12 +10,14 @@ export class RedisRedlock {
 
     constructor(private readonly redisService: RedisService) {
         const clients = this.redisService.getClients();
+        if (clients.length === 0) throw new Error('No Redis clients available');
+
         this.redlock = new Redlock(clients, {
-            driftFactor: 0.01,
-            retryCount: 400,
-            retryDelay: 100,
-            retryJitter: 200,
-            automaticExtensionThreshold: 1000,
+            driftFactor: 0.01,             // 보정 팩터
+            retryCount: 10,                 // 재시도 횟수
+            retryDelay: 200,                 // 재시도 딜레이 (ms)
+            retryJitter: 100,                 // 랜덤 지터 추가
+            automaticExtensionThreshold: 2000 // 락 자동 연장
         });
 
         this.redlock.on('error', (error) => {
