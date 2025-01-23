@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { BalanceHistory, BalanceType, Prisma, UserBalance } from "@prisma/client";
 import { PrismaService } from "src/infrastructure/database/prisma.service";
 import { BalanceRepository } from "./balance.repository";
@@ -14,69 +14,63 @@ export class BalanceRepositoryPrisma implements BalanceRepository {
     }
 
     async chargeBalanceWithTransaction(userId: number, amount: number): Promise<UserBalance> {
-        let retries = 1;
+        return this.prisma.$transaction(async (tx) => {
+            const result = await tx.$queryRaw<UserBalance[]>`
+                SELECT * FROM UserBalance 
+                WHERE userId = ${userId}
+                FOR UPDATE`;
 
-        while (retries > 0) {
-            try {
-                return await this.prisma.$transaction(async (tx) => {
-                    const currentBalance = await tx.userBalance.findUnique({ where: { userId } });
-
-                    let updatedBalance;
-                    if (currentBalance) {
-                        const expectedBalance = Number(currentBalance.balance);
-                        const latestBalance = await tx.userBalance.findUnique({ where: { userId }});
-
-                        if (Number(latestBalance?.balance) !== expectedBalance) throw new ConflictException('Balance was modified');
-
-                        updatedBalance = await tx.userBalance.update({
-                            where: { userId },
-                            data: { balance: { increment: amount } }
-                        });
-                    } else {
-                        updatedBalance = await tx.userBalance.create({data: { userId, balance: amount }});
-                    }
-
-                    await this.createBalanceHistory(
-                        updatedBalance.id,
-                        BalanceType.CHARGE,
-                        amount,
-                        Number(updatedBalance.balance),
-                        tx
-                    );
-
-                    return updatedBalance;
-                }, {
-                    isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead
+            const userBalance = result[0];
+            if (!userBalance) {
+                const newBalance = await tx.userBalance.create({
+                    data: { userId, balance: amount }
                 });
-            } catch (error) {
-                if (error instanceof ConflictException && retries > 1) {
-                    retries--;
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    continue;
-                }
-                throw error;
-            }
-        }
 
-        throw new ConflictException('Failed to update balance after retries');
+                await this.createBalanceHistory(
+                    newBalance.id,
+                    BalanceType.CHARGE,
+                    amount,
+                    Number(newBalance.balance),
+                    tx
+                );
+
+                return newBalance;
+            }
+
+            const updatedBalance = await tx.userBalance.update({
+                where: { userId },
+                data: { balance: { increment: amount } }
+            });
+
+            await this.createBalanceHistory(
+                updatedBalance.id,
+                BalanceType.CHARGE,
+                amount,
+                Number(updatedBalance.balance),
+                tx
+            );
+
+            return updatedBalance;
+        }, {
+            isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+            timeout: 5000
+        });
     }
 
-    async deductBalance(
-        userId: number, 
-        amount: number, 
-        tx: Prisma.TransactionClient
-    ): Promise<UserBalance> {
-        const currentBalance = await tx.userBalance.findUnique({where: { userId }});
+    async deductBalance(userId: number, amount: number, tx: Prisma.TransactionClient): Promise<UserBalance> {
+        const result = await tx.$queryRaw<UserBalance[]>`
+            SELECT * FROM UserBalance 
+            WHERE userId = ${userId}
+            FOR UPDATE`;
 
-        if (!currentBalance) throw new NotFoundException('Balance not found');
+        const userBalance = result[0];
+        if (!userBalance) {
+            throw new NotFoundException('Balance not found');
+        }
 
-        const expectedBalance = Number(currentBalance.balance);
-        const latestBalance = await tx.userBalance.findUnique({
-            where: { userId }
-        });
-
-        if (Number(latestBalance?.balance) !== expectedBalance) throw new ConflictException('Balance was modified');
-        if (expectedBalance < amount) throw new BadRequestException('Insufficient balance');
+        if (userBalance.balance.lessThan(amount)) {
+            throw new BadRequestException('Insufficient balance');
+        }
 
         const updatedBalance = await tx.userBalance.update({
             where: { userId },
