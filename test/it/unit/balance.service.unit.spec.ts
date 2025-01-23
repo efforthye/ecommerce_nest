@@ -66,8 +66,6 @@ describe('잔액 서비스 테스트', () => {
                 updatedAt: new Date(),
             };
 
-            jest.spyOn(balanceRepository, 'chargeBalance').mockResolvedValue(mockUpdatedBalance);
-
             // when
             const result = await balanceService.chargeBalance(userId, chargeAmount);
 
