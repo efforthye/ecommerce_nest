@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException, Inject } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Inject, Optional } from '@nestjs/common';
 import { OrderRepository } from '../repository/order.repository';
 import { ProductRepository } from 'src/domain/product/repository/product.repository';
 import { CouponRepository } from 'src/domain/coupon/repository/coupon.repository';
@@ -12,14 +12,11 @@ import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
 @Injectable()
 export class OrderService {
     constructor(
-        @Inject(ORDER_REPOSITORY)
-        private readonly orderRepository: OrderRepository,
-        @Inject(PRODUCT_REPOSITORY)
-        private readonly productRepository: ProductRepository,
-        @Inject(COUPON_REPOSITORY)
-        private readonly couponRepository: CouponRepository,
+        @Inject(ORDER_REPOSITORY) private readonly orderRepository: OrderRepository,
+        @Inject(PRODUCT_REPOSITORY) private readonly productRepository: ProductRepository,
+        @Inject(COUPON_REPOSITORY) private readonly couponRepository: CouponRepository,
         private readonly prisma: PrismaService,
-        private readonly logger: CustomLoggerService,
+        private readonly logger: CustomLoggerService
     ) {
         this.logger.setTarget(HttpExceptionFilter.name);
     }

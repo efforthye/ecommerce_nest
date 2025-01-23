@@ -13,44 +13,55 @@ export class BalanceRepositoryPrisma implements BalanceRepository {
         });
     }
 
-    async chargeBalanceWithTransaction(userId: number, amount: number): Promise<UserBalance> {
-        return this.prisma.$transaction(async (tx) => {
-            const result = await tx.$queryRaw<UserBalance[]>`
-                SELECT * FROM UserBalance 
-                WHERE userId = ${userId}
-                FOR UPDATE`;
+    async chargeBalance(userId: number, amount: number, tx?: Prisma.TransactionClient): Promise<UserBalance> {
+        if (tx) {
+            return this.chargeBalanceWithTx(userId, amount, tx);
+        }
+        return this.chargeBalanceWithNewTx(userId, amount);
+    }
 
-            const userBalance = result[0];
-            if (!userBalance) {
-                const newBalance = await tx.userBalance.create({
-                    data: { userId, balance: amount }
-                });
+    private async chargeBalanceWithTx(userId: number, amount: number, tx: Prisma.TransactionClient): Promise<UserBalance> {
+        const result = await tx.$queryRaw<UserBalance[]>`
+            SELECT * FROM UserBalance 
+            WHERE userId = ${userId}
+            FOR UPDATE`;
 
-                await this.createBalanceHistory(
-                    newBalance.id,
-                    BalanceType.CHARGE,
-                    amount,
-                    Number(newBalance.balance),
-                    tx
-                );
-
-                return newBalance;
-            }
-
-            const updatedBalance = await tx.userBalance.update({
-                where: { userId },
-                data: { balance: { increment: amount } }
+        const userBalance = result[0];
+        if (!userBalance) {
+            const newBalance = await tx.userBalance.create({
+                data: { userId, balance: amount }
             });
 
             await this.createBalanceHistory(
-                updatedBalance.id,
-                BalanceType.CHARGE,
+                newBalance.id,
+                BalanceType.REFUND,
                 amount,
-                Number(updatedBalance.balance),
+                Number(newBalance.balance),
                 tx
             );
 
-            return updatedBalance;
+            return newBalance;
+        }
+
+        const updatedBalance = await tx.userBalance.update({
+            where: { userId },
+            data: { balance: { increment: amount } }
+        });
+
+        await this.createBalanceHistory(
+            updatedBalance.id,
+            BalanceType.REFUND,
+            amount,
+            Number(updatedBalance.balance),
+            tx
+        );
+
+        return updatedBalance;
+    }
+
+    private async chargeBalanceWithNewTx(userId: number, amount: number): Promise<UserBalance> {
+        return this.prisma.$transaction(async (tx) => {
+            return this.chargeBalanceWithTx(userId, amount, tx);
         }, {
             isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
             timeout: 5000

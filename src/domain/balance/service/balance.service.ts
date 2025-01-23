@@ -17,7 +17,7 @@ export class BalanceService {
     }
 
     async chargeBalance(userId: number, amount: number): Promise<UserBalance> {
-        return this.balanceRepository.chargeBalanceWithTransaction(userId, amount);
+        return this.balanceRepository.chargeBalance(userId, amount);
     }
 
     async deductBalance(userId: number, amount: number): Promise<UserBalance> {

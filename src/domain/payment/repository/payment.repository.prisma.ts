@@ -118,9 +118,10 @@ export class PaymentRepositoryPrisma implements PaymentRepository {
             }
 
             // 낙관적 락으로 잔액 환불
-            await this.balanceRepository.chargeBalanceWithTransaction(
+            await this.balanceRepository.chargeBalance(
                 userId,
-                Number(payment.amount)
+                Number(payment.amount),
+                tx
             );
 
             // 재고 복구
