@@ -84,62 +84,39 @@ export class CouponRepositoryPrisma implements CouponRepository {
     }
 
     async issueFcfsCoupon(userId: number, fcfsCouponId: number): Promise<UserCoupon> {
-        try {
-            return await this.prisma.$transaction(async (tx) => {
-                await tx.$executeRawUnsafe(`
-                    SELECT * FROM FcfsCoupon 
-                    WHERE id = ? 
-                    AND stockQuantity > 0
-                    FOR UPDATE
-                `, fcfsCouponId);
+        return await this.prisma.$transaction(async (tx) => {
+            const [updated] = await tx.$queryRaw<any[]>`
+                UPDATE FcfsCoupon 
+                SET stockQuantity = stockQuantity - 1
+                WHERE id = ${fcfsCouponId} 
+                AND stockQuantity > 0
+                AND NOT EXISTS (
+                    SELECT 1 FROM UserCoupon 
+                    WHERE userId = ${userId} 
+                    AND couponId = FcfsCoupon.couponId
+                )
+                RETURNING *, 
+                (SELECT validDays FROM Coupon WHERE id = FcfsCoupon.couponId) as validDays`;
     
-                const fcfsCoupon = await tx.fcfsCoupon.findUnique({
-                    where: { id: fcfsCouponId },
-                    include: { coupon: true }
-                });
+            if (!updated) throw new BadRequestException('Coupon not available or already issued');
     
-                if (!fcfsCoupon) throw new NotFoundException('Coupon not found');
-                if (fcfsCoupon.stockQuantity <= 0) throw new BadRequestException('Coupon stock is empty');
+            const expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + updated.validDays);
     
-                const now = new Date();
-                if (now < fcfsCoupon.startDate || now > fcfsCoupon.endDate) throw new BadRequestException('Coupon not available');
-    
-                const existingCoupon = await this.findExistingUserCoupon(userId, fcfsCoupon.couponId, tx);
-                if (existingCoupon) throw new BadRequestException('이미 발급된 쿠폰입니다.');
-    
-                await this.decreaseFcfsCouponStock(fcfsCouponId, tx);
-    
-                const expiryDate = new Date();
-                expiryDate.setDate(expiryDate.getDate() + fcfsCoupon.coupon.validDays);
-    
-                return await this.createUserCoupon({
-                    userId,
-                    couponId: fcfsCoupon.couponId,
-                    status: CouponStatus.AVAILABLE,
-                    expiryDate
-                }, tx);
-            }, {
-                isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-                timeout: 5000
-            });
-        } catch (error) {
-            if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-                throw new BadRequestException('이미 발급된 쿠폰입니다.');
-            }
-            throw error;
-        }
+            return await this.createUserCoupon({
+                userId,
+                couponId: updated.couponId,
+                status: CouponStatus.AVAILABLE,
+                expiryDate
+            }, tx);
+        }, {
+            isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+        });
     }
     
-    async findFcfsCouponWithLock(
-        id: number,
-        tx: Prisma.TransactionClient
-    ): Promise<FcfsCouponWithCoupon | null> {
-        await tx.$executeRawUnsafe(`
-            SELECT * FROM FcfsCoupon 
-            WHERE id = ? 
-            FOR UPDATE
-        `, id);
-    
+    async findFcfsCouponWithLock(id: number, tx: Prisma.TransactionClient): Promise<FcfsCouponWithCoupon | null> {
+        await tx.$executeRaw`SELECT * FROM FcfsCoupon WHERE id = ${id} FOR UPDATE`;
+        
         const fcfsCoupon = await tx.fcfsCoupon.findUnique({
             where: { id },
             include: { coupon: true }
@@ -156,7 +133,7 @@ export class CouponRepositoryPrisma implements CouponRepository {
             }
         };
     }
-
+    
     async decreaseFcfsCouponStock(
         id: number,
         tx: Prisma.TransactionClient
