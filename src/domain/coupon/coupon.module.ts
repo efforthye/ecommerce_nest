@@ -1,18 +1,17 @@
-import { Module } from '@nestjs/common';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { Module, forwardRef } from '@nestjs/common';
 import { CouponService } from './service/coupon.service';
 import { COUPON_REPOSITORY } from 'src/common/constants/app.constants';
 import { CouponRepositoryPrisma } from './repository/coupon.repository.prisma';
+import { DatabaseModule } from 'src/infrastructure/database/database.module';
+import { OrderModule } from '../order/order.module';
+import { BalanceModule } from '../balance/balance.module';
 
 @Module({
+    imports: [DatabaseModule, forwardRef(() => OrderModule), BalanceModule],
     providers: [
         CouponService, // 비즈니스 로직 관리
-        PrismaService, // DB 접근
-        {
-            provide: COUPON_REPOSITORY,
-            useClass: CouponRepositoryPrisma,
-        }
+        { provide: COUPON_REPOSITORY, useClass: CouponRepositoryPrisma }
     ],
-    exports: [CouponService, COUPON_REPOSITORY], // 다른 모듈에서 사용할 수 있도록 내보냄
+    exports: [CouponService, COUPON_REPOSITORY],
 })
 export class CouponModule {}

@@ -1,9 +1,8 @@
-import { Controller, Post, Body, Param, Patch, UseGuards, UseInterceptors, Headers } from '@nestjs/common';
+import { Controller, Post, Body, Param, Patch, UseGuards, UseInterceptors, Headers, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiHeader } from '@nestjs/swagger';
 import { OrderService } from 'src/domain/order/service/order.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { OrderStatus } from '@prisma/client';
-import { PessimisticLockInterceptor } from 'src/common/interceptors/pessimistic-lock.interceptor';
 import { CreateOrderDto } from 'src/interfaces/dto/order.dto';
 import { ParseUserIdInterceptor } from 'src/common/interceptors/parse-user-id.interceptor';
 
@@ -19,7 +18,6 @@ export class OrderController {
     @ApiResponse({ status: 201, schema: { example: { id: 1, userId: 1, totalAmount: 50000, discountAmount: 5000, finalAmount: 45000, status: OrderStatus.PENDING, items: [] }}})
     @UseGuards(JwtAuthGuard)
     @UseInterceptors(ParseUserIdInterceptor)
-    @UseInterceptors(PessimisticLockInterceptor)
     @Post(':userId')
     async createOrder(
         @Headers('x-bypass-token') bypassToken: string,
