@@ -6,6 +6,8 @@ import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { Order, OrderStatus, Prisma } from '@prisma/client';
 import { CreateOrderDto } from 'src/interfaces/dto/order.dto';
 import { COUPON_REPOSITORY, ORDER_REPOSITORY, PRODUCT_REPOSITORY } from 'src/common/constants/app.constants';
+import { CustomLoggerService } from 'src/infrastructure/logging/logger.service';
+import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
 
 @Injectable()
 export class OrderService {
@@ -16,8 +18,11 @@ export class OrderService {
         private readonly productRepository: ProductRepository,
         @Inject(COUPON_REPOSITORY)
         private readonly couponRepository: CouponRepository,
-        private readonly prisma: PrismaService
-    ) {}
+        private readonly prisma: PrismaService,
+        private readonly logger: CustomLoggerService,
+    ) {
+        this.logger.setTarget(HttpExceptionFilter.name);
+    }
 
     // 주문 생성
     async createOrder(userId: number, createOrderDto: CreateOrderDto): Promise<Order> {
@@ -74,7 +79,7 @@ export class OrderService {
                         }
                     }
                 } catch (error) {
-                    console.error('Coupon processing error:', error);
+                    this.logger.error(`Coupon processing error: ${error}`);
                     // 쿠폰 처리 중 오류가 발생해도 주문은 계속 진행
                 }
             }

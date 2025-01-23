@@ -5,11 +5,18 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { OrderStatus } from '@prisma/client';
 import { CreateOrderDto } from 'src/interfaces/dto/order.dto';
 import { ParseUserIdInterceptor } from 'src/common/interceptors/parse-user-id.interceptor';
+import { CustomLoggerService } from 'src/infrastructure/logging/logger.service';
+import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
 
 @ApiTags('주문')
 @Controller('order')
 export class OrderController {
-    constructor(private readonly orderService: OrderService) {}
+    constructor(
+        private readonly orderService: OrderService,
+        private readonly logger: CustomLoggerService,
+    ) {
+        this.logger.setTarget(HttpExceptionFilter.name);
+    }
 
     @ApiOperation({ summary: '주문 생성' })
     @ApiHeader({ name: 'x-bypass-token', required: true, description: '인증 토큰 (temp bypass key: happy-world-token)', schema: { type: 'string' } })
@@ -24,7 +31,7 @@ export class OrderController {
         @Param('userId') userId: number,
         @Body() createOrderDto: CreateOrderDto
     ) {
-        console.log('CreateOrderDto:', createOrderDto);
+        this.logger.log(`CreateOrderDto: ${createOrderDto}`);
         return this.orderService.createOrder(userId, createOrderDto);
     }
 
