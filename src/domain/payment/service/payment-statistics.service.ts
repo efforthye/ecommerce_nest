@@ -1,8 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { Payment } from '@prisma/client';
+import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
+import { CustomLoggerService } from 'src/infrastructure/logging/logger.service';
 
 @Injectable()
 export class PaymentStatisticsService {
+    constructor(
+        private readonly logger: CustomLoggerService,
+    ){
+        this.logger.setTarget(HttpExceptionFilter.name);
+    }
+
     private statistics = {
         totalPayments: 0,
         totalAmount: 0,
@@ -23,8 +31,7 @@ export class PaymentStatisticsService {
 
         this.statistics.averageAmount = this.statistics.totalAmount / this.statistics.successfulPayments;
         
-        // 임시로 콘솔에 통계 출력
-        console.log('Payment Statistics Updated:', this.statistics);
+        this.logger.log(`Payment Statistics Updated: ${this.statistics}`);
     }
 
     getStatistics() {

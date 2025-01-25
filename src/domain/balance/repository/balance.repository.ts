@@ -1,17 +1,14 @@
-
-import { Injectable } from '@nestjs/common';
-import { BalanceHistory, Prisma, UserBalance } from '@prisma/client';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
-
+import { BalanceHistory, BalanceType, Prisma, UserBalance } from '@prisma/client';
 
 export interface BalanceRepository {
     findByUserId(userId: number): Promise<UserBalance | null>;
     chargeBalance(userId: number, amount: number, tx?: Prisma.TransactionClient): Promise<UserBalance>;
+    deductBalance(userId: number, amount: number, tx: Prisma.TransactionClient): Promise<UserBalance>;
     createBalanceHistory(
         userBalanceId: number,
-        type: string,
+        type: BalanceType,
         amount: number,
         afterBalance: number,
-        tx?: Prisma.TransactionClient
+        tx: Prisma.TransactionClient
     ): Promise<BalanceHistory>;
 }

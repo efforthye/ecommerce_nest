@@ -6,7 +6,6 @@ import { PaymentController } from 'src/interfaces/controllers/payment/payment.co
 import { PAYMENT_REPOSITORY } from 'src/common/constants/app.constants';
 import { PaymentRepositoryPrisma } from 'src/domain/payment/repository/payment.repository.prisma';
 import { DatabaseModule } from 'src/infrastructure/database/database.module';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { PaymentStatisticsService } from './service/payment-statistics.service';
 
 @Module({
@@ -18,7 +17,6 @@ import { PaymentStatisticsService } from './service/payment-statistics.service';
     controllers: [PaymentController],
     providers: [
         PaymentService,
-        PrismaService,
         {
             provide: PAYMENT_REPOSITORY,
             useClass: PaymentRepositoryPrisma

@@ -93,7 +93,7 @@ model UserCoupon {
   coupon      Coupon        @relation(fields: [couponId], references: [id])
   orders      Order[]
 
-  @@index([userId])
+  @@unique([userId, couponId]) // 복합 유니크 인덱스 추가
   @@index([status])
   @@index([expiryDate])
 }

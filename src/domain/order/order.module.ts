@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { OrderService } from './service/order.service';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { OrderController } from 'src/interfaces/controllers/order/order.controller';
@@ -6,11 +6,12 @@ import { OrderRepositoryPrisma } from 'src/domain/order/repository/order.reposit
 import { ORDER_REPOSITORY } from 'src/common/constants/app.constants';
 import { ProductModule } from '../product/product.module';
 import { CouponModule } from '../coupon/coupon.module';
+import { DatabaseModule } from 'src/infrastructure/database/database.module';
 
 @Module({
     imports: [
         ProductModule,
-        CouponModule
+        forwardRef(() => CouponModule)
     ],
     controllers: [OrderController],
     providers: [

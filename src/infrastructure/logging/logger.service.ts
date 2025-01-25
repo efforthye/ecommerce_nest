@@ -26,7 +26,7 @@ export class CustomLoggerService implements LoggerService {
                 let prefix, messageColor;
                 if (typeof message === 'string' && message.includes('[HTTP]')) {
                     prefix = '\x1B[32m[Winston]\x1B[39m';
-                    messageColor = '\x1B[36mINFO\x1B[39m'; // HTTP 요청은 INFO cyan 색상
+                    messageColor = '\x1B[36mINFO\x1B[39m'; // HTTP 요청은 INFO cyan 색상 
                 } else {
                     prefix = '\x1B[33m[Winston]\x1B[39m';
                     messageColor = '\x1B[32mLOG\x1B[39m';  // 일반 로그는 LOG green 색상

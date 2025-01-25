@@ -60,7 +60,6 @@ const setup = async () => {
 
       // 테스트 데이터 생성 및 결과 확인
       const testData = await createTestData(prisma);
-      console.log('Test environment setup completed with data:', testData);
       return prisma;
 
     } catch (error) {

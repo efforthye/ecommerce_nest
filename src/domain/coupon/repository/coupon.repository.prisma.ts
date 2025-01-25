@@ -1,14 +1,14 @@
-import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
-import { FcfsCoupon, UserCoupon, Prisma, CouponStatus } from '@prisma/client';
-import { PaginationDto } from '../dto/pagination.dto';
 import { CouponRepository } from './coupon.repository';
-import { FcfsCouponWithCoupon, CreateUserCouponInput } from '../types/coupon.types';
+import { CouponStatus, FcfsCoupon, Prisma, UserCoupon } from '@prisma/client';
+import { CreateUserCouponInput, FcfsCouponWithCoupon } from '../types/coupon.types';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { PaginationDto } from '../dto/pagination.dto';
 
 @Injectable()
 export class CouponRepositoryPrisma implements CouponRepository {
     constructor(private readonly prisma: PrismaService) {}
-    
+
     async findExistingUserCoupon(
         userId: number, 
         couponId: number, 
@@ -83,53 +83,57 @@ export class CouponRepositoryPrisma implements CouponRepository {
         return [userCoupons, total];
     }
 
-    async findFcfsCouponWithLock(
-        id: number,
-        tx: Prisma.TransactionClient
-    ): Promise<FcfsCouponWithCoupon | null> {
-        // 먼저 FcfsCoupon 테이블만 잠금을 걸고 조회
-        const fcfsCoupon = await tx.$queryRaw<{
-            id: number;
-            couponId: number;
-            totalQuantity: number;
-            stockQuantity: number;
-            startDate: Date;
-            endDate: Date;
-            createdAt: Date;
-        }[]>`
-            SELECT * FROM \`FcfsCoupon\`
-            WHERE id = ${id}
-            FOR UPDATE;
-        `;
-
-        if (!fcfsCoupon || fcfsCoupon.length === 0) {
-            return null;
-        }
-
-        // 관련 쿠폰 정보 조회 (잠금 없이)
-        const coupon = await tx.coupon.findUnique({
-            where: { id: fcfsCoupon[0].couponId }
+    async issueFcfsCoupon(userId: number, fcfsCouponId: number): Promise<UserCoupon> {
+        return await this.prisma.$transaction(async (tx) => {
+            const [updated] = await tx.$queryRaw<any[]>`
+                UPDATE FcfsCoupon 
+                SET stockQuantity = stockQuantity - 1
+                WHERE id = ${fcfsCouponId} 
+                AND stockQuantity > 0
+                AND NOT EXISTS (
+                    SELECT 1 FROM UserCoupon 
+                    WHERE userId = ${userId} 
+                    AND couponId = FcfsCoupon.couponId
+                )
+                RETURNING *, 
+                (SELECT validDays FROM Coupon WHERE id = FcfsCoupon.couponId) as validDays`;
+    
+            if (!updated) throw new BadRequestException('Coupon not available or already issued');
+    
+            const expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + updated.validDays);
+    
+            return await this.createUserCoupon({
+                userId,
+                couponId: updated.couponId,
+                status: CouponStatus.AVAILABLE,
+                expiryDate
+            }, tx);
+        }, {
+            isolationLevel: Prisma.TransactionIsolationLevel.Serializable
         });
-
-        if (!coupon) {
-            return null;
-        }
-
+    }
+    
+    async findFcfsCouponWithLock(id: number, tx: Prisma.TransactionClient): Promise<FcfsCouponWithCoupon | null> {
+        await tx.$executeRaw`SELECT * FROM FcfsCoupon WHERE id = ${id} FOR UPDATE`;
+        
+        const fcfsCoupon = await tx.fcfsCoupon.findUnique({
+            where: { id },
+            include: { coupon: true }
+        });
+    
+        if (!fcfsCoupon) return null;
+    
         return {
-            ...fcfsCoupon[0],
+            ...fcfsCoupon,
             coupon: {
-                id: coupon.id,
-                name: coupon.name,
-                type: coupon.type,
-                amount: Number(coupon.amount),
-                minOrderAmount: Number(coupon.minOrderAmount),
-                validDays: coupon.validDays,
-                isFcfs: coupon.isFcfs,
-                createdAt: coupon.createdAt
+                ...fcfsCoupon.coupon,
+                amount: Number(fcfsCoupon.coupon.amount),
+                minOrderAmount: Number(fcfsCoupon.coupon.minOrderAmount)
             }
         };
     }
-
+    
     async decreaseFcfsCouponStock(
         id: number,
         tx: Prisma.TransactionClient
