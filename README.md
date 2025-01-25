@@ -1,4 +1,8 @@
-# 이커머스 서비스 개발
+- 항해플러스 7주차 토요지식회 발표 진행: https://zoom.us/rec/share/qU-rAZ0q0FL8twO5Rqgdx3EMqUGfw8yLaDFfVH3cfnjqPBcI1URPLlQPVMjMJmlh.QvTBnhTRhWc3Z-sB
+--
+<br/><br/>
+
+# 목표: 이커머스 서비스 개발
 
 ## 프로젝트 개발 계획(Milestone)
 ![alt text](images/milestone2.png)
