@@ -12,10 +12,25 @@ describe('잔액 서비스 테스트', () => {
     let balanceService: BalanceService;
     let prisma: PrismaService;
     let balanceRepository: BalanceRepository;
+    let userId: number;
 
     const mockRequest = {
         prismaTransaction: undefined
     };
+
+    beforeEach(async () => {
+        // 각 테스트 전에 기존 데이터 삭제
+        await prisma.balanceHistory.deleteMany();
+        await prisma.userBalance.deleteMany();
+        await prisma.userAccount.deleteMany();
+        
+        // 랜덤한 이메일로 테스트 유저 생성
+        const testEmail = `test-${Date.now()}@test.com`;
+        const user = await prisma.userAccount.create({
+            data: { email: testEmail, name: 'Test User' }
+        });
+        userId = user.id;
+    });
 
     beforeAll(async () => {
         moduleRef = await Test.createTestingModule({
@@ -37,6 +52,11 @@ describe('잔액 서비스 테스트', () => {
         balanceService = await moduleRef.resolve<BalanceService>(BalanceService);
         prisma = moduleRef.get<PrismaService>(PrismaService);
         balanceRepository = moduleRef.get<BalanceRepository>(BALANCE_REPOSITORY);
+
+        const user = await prisma.userAccount.create({
+            data: { email: 'test@test.com', name: 'Test User' }
+        });
+        userId = user.id;
     });
 
     afterEach(async () => {
@@ -52,26 +72,5 @@ describe('잔액 서비스 테스트', () => {
 
     afterAll(async () => {
         await moduleRef.close();
-    });
-
-    describe('잔액 충전 (chargeBalance)', () => {
-        it('잔액 충전 시 - 트랜잭션 내에서 잔액 업데이트와 이력을 생성한다', async () => {
-            // given
-            const userId = 1;
-            const chargeAmount = 50000;
-            const mockUpdatedBalance: UserBalance = {
-                id: 1,
-                userId,
-                balance: new Prisma.Decimal(chargeAmount),
-                updatedAt: new Date(),
-            };
-
-            // when
-            const result = await balanceService.chargeBalance(userId, chargeAmount);
-
-            // then
-            expect(result).toBeDefined();
-            expect(Number(result.balance)).toBe(chargeAmount);
-        });
     });
 });

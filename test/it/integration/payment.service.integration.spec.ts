@@ -5,14 +5,13 @@ import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { OrderService } from 'src/domain/order/service/order.service';
 import { BalanceService } from 'src/domain/balance/service/balance.service';
 import { PaymentStatus, PrismaClient } from '@prisma/client';
-import { BadRequestException } from '@nestjs/common';
 import { PaymentStatisticsService } from 'src/domain/payment/service/payment-statistics.service';
 import { 
-   PAYMENT_REPOSITORY, 
-   ORDER_REPOSITORY, 
-   PRODUCT_REPOSITORY, 
-   COUPON_REPOSITORY, 
-   BALANCE_REPOSITORY 
+  PAYMENT_REPOSITORY, 
+  ORDER_REPOSITORY, 
+  PRODUCT_REPOSITORY, 
+  COUPON_REPOSITORY, 
+  BALANCE_REPOSITORY 
 } from 'src/common/constants/app.constants';
 import { OrderRepositoryPrisma } from 'src/domain/order/repository/order.repository.prisma';
 import { CouponRepositoryPrisma } from 'src/domain/coupon/repository/coupon.repository.prisma';
@@ -22,11 +21,15 @@ import { Reflector } from '@nestjs/core';
 import { PaymentController } from 'src/interfaces/controllers/payment/payment.controller';
 import { CustomLoggerService } from 'src/infrastructure/logging/logger.service';
 import { ProductRepositoryPrisma } from 'src/domain/product/repository/product.repository.impl';
+import { RedisService } from 'src/infrastructure/redis/redis.service';
+import { RedisRedlock } from 'src/infrastructure/redis/redis.redlock';
+import { ConfigService } from '@nestjs/config';
+import { BadRequestException } from '@nestjs/common';
 
 class ExtendedPrismaClient extends PrismaClient {
- async onModuleInit() {
-   await this.$connect();
- }
+   async onModuleInit() {
+       await this.$connect();
+   }
 }
 
 describe('결제 서비스 통합 테스트', () => {
@@ -40,16 +43,22 @@ describe('결제 서비스 통합 테스트', () => {
     let testOrder: { id: number };
     let logger: CustomLoggerService;
     let balanceRepository: BalanceRepositoryPrisma;
- 
+    let redisService: RedisService;
+    let redlock: RedisRedlock;
+
     beforeAll(async () => {
         prisma = global.__PRISMA_CLIENT__ as ExtendedPrismaClient;
         if (!prisma) throw new Error('Prisma client is not initialized');
- 
+
         logger = new CustomLoggerService();
         logger.setTarget('PaymentServiceTest');
- 
+
         balanceRepository = new BalanceRepositoryPrisma(prisma);
- 
+
+        redisService = new RedisService();
+        await redisService.onModuleInit();
+        redlock = new RedisRedlock(redisService);
+
         module = await Test.createTestingModule({
             providers: [
                 PaymentController,
@@ -62,9 +71,21 @@ describe('결제 서비스 통합 테스트', () => {
                     useValue: prisma,
                 },
                 {
+                    provide: RedisService,
+                    useValue: redisService
+                },
+                {
+                    provide: RedisRedlock, 
+                    useValue: redlock
+                },
+                {
                     provide: PAYMENT_REPOSITORY,
                     useFactory: () => {
-                        const repo = new PaymentRepositoryPrisma(prisma, balanceRepository);
+                        const repo = new PaymentRepositoryPrisma(
+                            prisma, 
+                            balanceRepository,
+                            redlock
+                        );
                         return repo;
                     }
                 },
@@ -92,7 +113,7 @@ describe('결제 서비스 통합 테스트', () => {
                 PessimisticLockInterceptor,
             ],
         }).compile();
- 
+
         paymentController = await module.resolve(PaymentController);
         paymentService = await module.resolve(PaymentService);
         orderService = await module.resolve(OrderService);
@@ -143,6 +164,8 @@ describe('결제 서비스 통합 테스트', () => {
             prisma.userBalance.deleteMany(),
             prisma.userAccount.deleteMany(),
         ]);
+        
+        await redisService?.onModuleDestroy();
         
         if (module) {
             await module.close();

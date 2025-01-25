@@ -21,17 +21,23 @@ export class BalanceRepositoryPrisma implements BalanceRepository {
     }
 
     private async chargeBalanceWithTx(userId: number, amount: number, tx: Prisma.TransactionClient): Promise<UserBalance> {
+        // 사용자 존재 여부 먼저 확인
+        const user = await tx.userAccount.findUnique({
+            where: { id: userId }
+        });
+        if (!user) throw new NotFoundException('User not found');
+    
         const result = await tx.$queryRaw<UserBalance[]>`
             SELECT * FROM UserBalance 
             WHERE userId = ${userId}
             FOR UPDATE`;
-
+    
         const userBalance = result[0];
         if (!userBalance) {
             const newBalance = await tx.userBalance.create({
                 data: { userId, balance: amount }
             });
-
+    
             await this.createBalanceHistory(
                 newBalance.id,
                 BalanceType.REFUND,
@@ -39,15 +45,15 @@ export class BalanceRepositoryPrisma implements BalanceRepository {
                 Number(newBalance.balance),
                 tx
             );
-
+    
             return newBalance;
         }
-
+    
         const updatedBalance = await tx.userBalance.update({
             where: { userId },
             data: { balance: { increment: amount } }
         });
-
+    
         await this.createBalanceHistory(
             updatedBalance.id,
             BalanceType.REFUND,
@@ -55,7 +61,7 @@ export class BalanceRepositoryPrisma implements BalanceRepository {
             Number(updatedBalance.balance),
             tx
         );
-
+    
         return updatedBalance;
     }
 
