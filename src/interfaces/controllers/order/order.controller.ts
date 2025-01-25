@@ -1,16 +1,22 @@
-import { Controller, Post, Body, Param, Patch, UseGuards, UseInterceptors, Headers } from '@nestjs/common';
+import { Controller, Post, Body, Param, Patch, UseGuards, UseInterceptors, Headers, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiHeader } from '@nestjs/swagger';
 import { OrderService } from 'src/domain/order/service/order.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { OrderStatus } from '@prisma/client';
-import { PessimisticLockInterceptor } from 'src/common/interceptors/pessimistic-lock.interceptor';
 import { CreateOrderDto } from 'src/interfaces/dto/order.dto';
 import { ParseUserIdInterceptor } from 'src/common/interceptors/parse-user-id.interceptor';
+import { CustomLoggerService } from 'src/infrastructure/logging/logger.service';
+import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
 
 @ApiTags('주문')
 @Controller('order')
 export class OrderController {
-    constructor(private readonly orderService: OrderService) {}
+    constructor(
+        private readonly orderService: OrderService,
+        private readonly logger: CustomLoggerService,
+    ) {
+        this.logger.setTarget(HttpExceptionFilter.name);
+    }
 
     @ApiOperation({ summary: '주문 생성' })
     @ApiHeader({ name: 'x-bypass-token', required: true, description: '인증 토큰 (temp bypass key: happy-world-token)', schema: { type: 'string' } })
@@ -19,14 +25,13 @@ export class OrderController {
     @ApiResponse({ status: 201, schema: { example: { id: 1, userId: 1, totalAmount: 50000, discountAmount: 5000, finalAmount: 45000, status: OrderStatus.PENDING, items: [] }}})
     @UseGuards(JwtAuthGuard)
     @UseInterceptors(ParseUserIdInterceptor)
-    @UseInterceptors(PessimisticLockInterceptor)
     @Post(':userId')
     async createOrder(
         @Headers('x-bypass-token') bypassToken: string,
         @Param('userId') userId: number,
         @Body() createOrderDto: CreateOrderDto
     ) {
-        console.log('CreateOrderDto:', createOrderDto);
+        this.logger.log(`CreateOrderDto: ${createOrderDto}`);
         return this.orderService.createOrder(userId, createOrderDto);
     }
 

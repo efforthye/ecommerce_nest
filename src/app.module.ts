@@ -19,6 +19,10 @@ import * as Joi from 'joi';
 import { DatabaseConfig } from "./infrastructure/database/database.config";
 import { LoggerModule } from "./infrastructure/logging/logger.module";
 import { CartModule } from "./domain/cart/cart.module";
+import { BALANCE_REPOSITORY, COUPON_REPOSITORY, PAYMENT_REPOSITORY } from "./common/constants/app.constants";
+import { PaymentRepositoryPrisma } from "./domain/payment/repository/payment.repository.prisma";
+import { BalanceRepositoryPrisma } from "./domain/balance/repository/balance.repository.prisma";
+import { CouponRepositoryPrisma } from "./domain/coupon/repository/coupon.repository.prisma";
 
 @Module({
   imports: [
@@ -35,10 +39,10 @@ import { CartModule } from "./domain/cart/cart.module";
         JWT_REGISTER_SECRET_KEY: Joi.string().required().default('happy-world-register-key'),
       }),
     }),
-    DatabaseModule, 
-    ProductModule, 
+    DatabaseModule,
+    ProductModule,
     BalanceModule,
-    OrderModule,
+    OrderModule, 
     PaymentModule,
     CouponModule,
     LoggerModule,
@@ -48,15 +52,17 @@ import { CartModule } from "./domain/cart/cart.module";
     CouponController,
     BalanceController,
     ProductController,
-    OrderController,
+    OrderController, 
     CartController,
     TestController,
     PaymentController,
   ],
   providers: [
     JwtAuthGuard,
-    BalanceService,
-    DatabaseConfig
+    DatabaseConfig,
+    { provide: PAYMENT_REPOSITORY, useClass: PaymentRepositoryPrisma },
+    { provide: BALANCE_REPOSITORY, useClass: BalanceRepositoryPrisma },
+    { provide: COUPON_REPOSITORY, useClass: CouponRepositoryPrisma }
   ],
-})
-export class AppModule {}
+ })
+ export class AppModule {}

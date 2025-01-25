@@ -1,12 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as mysql from 'mysql2/promise';
+import { CustomLoggerService } from '../logging/logger.service';
+import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
 
 export const DATABASE_URL = process.env.DATABASE_URL|| "mysql://root:1234@localhost:3306/ecommerce";
 
 @Injectable()
 export class DatabaseConfig {
-  constructor(private configService: ConfigService) {}
+  constructor(
+    private configService: ConfigService,
+    private readonly logger: CustomLoggerService,
+  ) {
+    this.logger.setTarget(HttpExceptionFilter.name);
+  }
 
   async createDatabase() {
     try {
@@ -25,9 +32,9 @@ export class DatabaseConfig {
 
       await connection.end();
 
-      console.log('데이터베이스가 성공적으로 생성되었습니다.');
+      this.logger.log('데이터베이스가 성공적으로 생성되었습니다.');
     } catch (error) {
-      console.error('데이터베이스 생성 중 오류 발생:', error);
+      this.logger.error(`데이터베이스 생성 중 오류 발생: ${error}`);
       throw error;
     }
   }

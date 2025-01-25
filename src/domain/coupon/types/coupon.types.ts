@@ -1,13 +1,6 @@
-import { CouponStatus, Prisma } from '@prisma/client';
+import { CouponStatus, FcfsCoupon } from "@prisma/client";
 
-export interface FcfsCouponWithCoupon {
-    id: number;
-    couponId: number;
-    totalQuantity: number;
-    stockQuantity: number;
-    startDate: Date;
-    endDate: Date;
-    createdAt: Date;
+export interface FcfsCouponWithCoupon extends Omit<FcfsCoupon, 'coupon'> {
     coupon: {
         id: number;
         name: string;

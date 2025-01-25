@@ -22,7 +22,8 @@ describe('선착순 쿠폰 서비스 테스트', () => {
             decreaseFcfsCouponStock: jest.fn(),
             createUserCoupon: jest.fn(),
             findUserCoupons: jest.fn(),
-            findExistingUserCoupon: jest.fn()
+            findExistingUserCoupon: jest.fn(),
+            issueFcfsCoupon: jest.fn(),
         };
 
         mockPrismaService = {
