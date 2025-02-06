@@ -1,6 +1,6 @@
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { CouponRepository } from './coupon.repository';
-import { CouponStatus, FcfsCoupon, Prisma, UserCoupon } from '@prisma/client';
+import { Coupon, CouponStatus, FcfsCoupon, Prisma, UserCoupon } from '@prisma/client';
 import { CreateUserCouponInput, FcfsCouponWithCoupon } from '../types/coupon.types';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginationDto } from '../dto/pagination.dto';
@@ -53,11 +53,22 @@ export class CouponRepositoryPrisma implements CouponRepository {
         return [fcfsCoupons, total];
     }
 
-    async findFcfsCouponById(id: number): Promise<FcfsCoupon | null> {
-        return this.prisma.fcfsCoupon.findUnique({
+    async findFcfsCouponById(id: number): Promise<FcfsCouponWithCoupon | null> {
+        const result = await this.prisma.fcfsCoupon.findUnique({
             where: { id },
             include: { coupon: true }
         });
+
+        if (!result) return null;
+
+        return {
+            ...result,
+            coupon: {
+                ...result.coupon,
+                amount: Number(result.coupon.amount),
+                minOrderAmount: Number(result.coupon.minOrderAmount)
+            }
+        };
     }
 
     async findUserCoupons(
