@@ -352,55 +352,137 @@ UNIQUE INDEX idx_product_variant_unique ON product_variant(product_id, option_na
 
 ## 프로젝트 구조 및 실행 방법
 ### 프로젝트 구조
+- 명령어: `tree -I 'node_modules|dist|logs|docs|images|test|docker|comment.md|*.md|*.png|*.jpeg|*.jpg|*.sql'`
 ```
-src/
-├── common/             # 공통 유틸리티
-│   └── comment.md      
-├── domain/            # 도메인 계층
-│   ├── order/
-│   └── comment.md
+.
+├── migrations/              # 데이터베이스 마이그레이션
+│   └── migration.data.ts
+├── nest-cli.json            # NestJS CLI 설정 파일
+├── package-lock.json        # npm 패키지 버전 고정 파일
+├── package.json             # 프로젝트 종속성 및 스크립트 관리
 │
-├── infrastructure/    # 인프라 계층
-│   ├── database/
-│   │   ├── typeorm/
-│   │   ├── database.config.ts
-│   │   ├── database.module.ts
-│   │   └── prisma.service.ts
-│   └── repositories/
-│       └── order.repository.impl.ts
+├── prisma/                  # Prisma ORM 관련 파일
+│   ├── schema.prisma        # Prisma 스키마 파일
+│   ├── migrations/          # 마이그레이션 기록
+│   │   ├── 20250105173504_init/
+│   │   ├── 20250109113022_init/
+│   │   ├── 20250115163130_init/
+│   │   └── migration_lock.toml
 │
-├── interfaces/       # 인터페이스 계층
-│   ├── controllers/ # API 컨트롤러
-│   │   ├── balance/
-│   │   │   └── balance.controller.ts
-│   │   ├── cart/
-│   │   │   └── cart.controller.ts
-│   │   ├── coupon/
-│   │   │   └── coupon.controller.ts
-│   │   ├── order/
-│   │   │   └── order.controller.ts
-│   │   ├── payment/
-│   │   │   └── payment.controller.ts
-│   │   ├── product/
-│   │   │   └── product.controller.ts
-│   │   └── test/
-│   │       └── test.controller.ts
-│   └── dto/        # 데이터 전송 객체
-│       ├── balance.dto.ts
-│       ├── cart.dto.ts
-│       └── order.dto.ts
+├── src/                     # 프로젝트 소스 코드
+│   ├── app.module.ts        # 애플리케이션 루트 모듈
 │
-├── facades/        # 파사드 패턴
-│   ├── order.facade.ts
-│   └── comment.md
+│   ├── common/              # 공통 유틸리티 및 헬퍼 모듈
+│   │   ├── constants/       # 상수 정의
+│   │   │   └── app.constants.ts
+│   │   ├── decorators/      # 커스텀 데코레이터
+│   │   │   ├── current-user.decorator.ts
+│   │   │   └── pessimistic-lock.decorator.ts
+│   │   ├── filters/         # 예외 필터
+│   │   │   └── http-exception.filter.ts
+│   │   ├── guards/          # 인증 및 보안 관련 가드
+│   │   │   ├── auth.module.ts
+│   │   │   ├── jwt-auth.guard.ts
+│   │   │   └── jwt.strategy.ts
+│   │   └── interceptors/    # 인터셉터
+│   │       ├── logging.interceptor.ts
+│   │       ├── parse-user-id.interceptor.ts
+│   │       └── pessimistic-lock.interceptor.ts
 │
-├── main.ts              # 애플리케이션 시작점
-├── app.module.ts        # 앱 모듈
+│   ├── domain/              # 도메인 계층 (핵심 비즈니스 로직)
+│   │   ├── balance/         # 잔액 관리 도메인
+│   │   │   ├── balance.module.ts
+│   │   │   ├── dto/
+│   │   │   │   └── charge-balance.dto.ts
+│   │   │   ├── entity/
+│   │   │   │   └── balance.entity.ts
+│   │   │   ├── repository/
+│   │   │   │   ├── balance.repository.prisma.ts
+│   │   │   │   └── balance.repository.ts
+│   │   │   ├── service/
+│   │   │   │   └── balance.service.ts
+│   │   │   └── types/
+│   │   │       └── balance.types.ts
+│   │   ├── cart/            # 장바구니 도메인
+│   │   │   ├── cart.module.ts
+│   │   │   ├── repository/
+│   │   │   │   ├── cart.repository.prisma.ts
+│   │   │   │   └── cart.repository.ts
+│   │   │   └── service/
+│   │   │       └── cart.service.ts
+│   │   ├── coupon/          # 쿠폰 도메인
+│   │   │   ├── coupon.module.ts
+│   │   │   ├── dto/
+│   │   │   │   ├── available_fcfs_coupons.dto.ts
+│   │   │   │   ├── coupon_page_response.dto.ts
+│   │   │   │   ├── fcfs-coupon-detail.dto.ts
+│   │   │   │   ├── issue_coupon_response.dto.ts
+│   │   │   │   └── pagination.dto.ts
+│   │   │   ├── entity/
+│   │   │   │   └── coupon.entity.ts
+│   │   │   ├── repository/
+│   │   │   │   ├── coupon.redis.repository.ts
+│   │   │   │   ├── coupon.repository.prisma.ts
+│   │   │   │   └── coupon.repository.ts
+│   │   │   ├── service/
+│   │   │   │   ├── coupon-issue.scheduler.ts
+│   │   │   │   └── coupon.service.ts
+│   │   │   └── types/
+│   │   │       └── coupon.types.ts
+│   │   ├── order/           # 주문 도메인
+│   │   │   ├── order.module.ts
+│   │   │   ├── repository/
+│   │   │   │   ├── order.repository.prisma.ts
+│   │   │   │   └── order.repository.ts
+│   │   │   ├── service/
+│   │   │   │   └── order.service.ts
+│   │   │   └── types/
+│   │   │       └── order.types.ts
 │
-└── test/          # 테스트
-    └── it/
-        └── example/
-            └── example.it.spec.ts
+│   ├── infrastructure/      # 인프라 계층 (DB, 로깅, Redis 등)
+│   │   ├── database/        # 데이터베이스 관련 설정
+│   │   │   ├── database.config.ts
+│   │   │   ├── database.module.ts
+│   │   │   ├── database.setup.ts
+│   │   │   ├── prisma.service.ts
+│   │   │   └── typeorm/
+│   │   │       ├── database.config.ts
+│   │   │       └── database.module.ts
+│   │   ├── logging/         # 로깅 관련
+│   │   │   ├── logger.module.ts
+│   │   │   └── logger.service.ts
+│   │   └── redis/           # Redis 관련
+│   │       ├── redis.module.ts
+│   │       ├── redis.redlock.ts
+│   │       ├── redis.service.ts
+│   │       └── test-redlock.ts
+│
+│   ├── interfaces/          # 인터페이스 계층 (API 컨트롤러)
+│   │   ├── controllers/     # API 컨트롤러
+│   │   │   ├── balance/
+│   │   │   │   └── balance.controller.ts
+│   │   │   ├── cart/
+│   │   │   │   └── cart.controller.ts
+│   │   │   ├── coupon/
+│   │   │   │   └── coupon.controller.ts
+│   │   │   ├── order/
+│   │   │   │   └── order.controller.ts
+│   │   │   ├── payment/
+│   │   │   │   └── payment.controller.ts
+│   │   │   └── product/
+│   │   │       └── product.controller.ts
+│   │   ├── dto/             # 데이터 전송 객체 (DTO)
+│   │   │   ├── balance.dto.ts
+│   │   │   ├── cart.dto.ts
+│   │   │   ├── order.dto.ts
+│   │   │   └── payment.dto.ts
+│   │   └── facades/         # 파사드 패턴
+│   │       └── order.facade.ts
+│
+│   └── main.ts              # 애플리케이션 진입점
+│
+├── tsconfig.build.json      # TypeScript 빌드 설정
+└── tsconfig.json            # TypeScript 설정 파일
 ```
 
 ### 기술 스택
