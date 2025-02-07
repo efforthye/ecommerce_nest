@@ -43,9 +43,15 @@ async function bootstrap() {
   app.useGlobalInterceptors(new LoggingInterceptor(logger));
 
   // 데이터베이스 초기화
+  try {
     const databaseConfig = app.get(DatabaseConfig);
-    const databaseSetup = app.get(DatabaseSetup); // 인스턴스 얻기
+    const databaseSetup = app.get(DatabaseSetup);
     await databaseSetup.initializeDatabase(databaseConfig);
+    logger.log('Database initialization completed.');
+  } catch (error) {
+    logger.error('Database initialization failed:', error);
+    process.exit(1);
+  }
 
   // Prisma Client 초기화 및 연결
   const prisma = new PrismaClient();

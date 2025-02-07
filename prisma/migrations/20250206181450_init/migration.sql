@@ -7,6 +7,7 @@ CREATE TABLE `UserAccount` (
     `updatedAt` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `UserAccount_email_key`(`email`),
+    INDEX `UserAccount_email_idx`(`email`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -18,6 +19,7 @@ CREATE TABLE `UserBalance` (
     `updatedAt` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `UserBalance_userId_key`(`userId`),
+    INDEX `UserBalance_userId_idx`(`userId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -30,6 +32,7 @@ CREATE TABLE `BalanceHistory` (
     `afterBalance` DECIMAL(65, 30) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
+    INDEX `BalanceHistory_userBalanceId_idx`(`userBalanceId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -41,8 +44,10 @@ CREATE TABLE `Coupon` (
     `amount` DECIMAL(65, 30) NOT NULL,
     `minOrderAmount` DECIMAL(65, 30) NOT NULL,
     `validDays` INTEGER NOT NULL,
+    `isFcfs` BOOLEAN NOT NULL DEFAULT false,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
+    INDEX `Coupon_isFcfs_idx`(`isFcfs`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -56,6 +61,8 @@ CREATE TABLE `FcfsCoupon` (
     `endDate` DATETIME(3) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
+    INDEX `FcfsCoupon_couponId_idx`(`couponId`),
+    INDEX `FcfsCoupon_startDate_endDate_idx`(`startDate`, `endDate`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -64,22 +71,14 @@ CREATE TABLE `UserCoupon` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `userId` INTEGER NOT NULL,
     `couponId` INTEGER NOT NULL,
-    `status` ENUM('AVAILABLE', 'EXPIRED') NOT NULL,
+    `status` ENUM('AVAILABLE', 'USED', 'EXPIRED') NOT NULL,
     `expiryDate` DATETIME(3) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `usedAt` DATETIME(3) NULL,
 
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `CouponHistory` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `userId` INTEGER NOT NULL,
-    `couponId` INTEGER NOT NULL,
-    `action` ENUM('ISSUED', 'USED', 'RESTORED', 'EXPIRED') NOT NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-
+    INDEX `UserCoupon_status_idx`(`status`),
+    INDEX `UserCoupon_expiryDate_idx`(`expiryDate`),
+    UNIQUE INDEX `UserCoupon_userId_couponId_key`(`userId`, `couponId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -93,6 +92,8 @@ CREATE TABLE `Product` (
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
+    INDEX `Product_isActive_idx`(`isActive`),
+    INDEX `Product_createdAt_idx`(`createdAt`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -100,11 +101,14 @@ CREATE TABLE `Product` (
 CREATE TABLE `ProductImage` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `productId` INTEGER NOT NULL,
+    `productVariantId` INTEGER NULL,
     `imageUrl` VARCHAR(191) NOT NULL,
     `sequence` INTEGER NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
+    INDEX `ProductImage_productId_idx`(`productId`),
+    INDEX `ProductImage_productVariantId_idx`(`productVariantId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -118,6 +122,8 @@ CREATE TABLE `ProductVariant` (
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
+    INDEX `ProductVariant_productId_idx`(`productId`),
+    INDEX `ProductVariant_stockQuantity_idx`(`stockQuantity`),
     UNIQUE INDEX `ProductVariant_productId_optionName_key`(`productId`, `optionName`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -134,6 +140,9 @@ CREATE TABLE `Order` (
     `orderedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `paidAt` DATETIME(3) NULL,
 
+    INDEX `Order_userId_idx`(`userId`),
+    INDEX `Order_status_idx`(`status`),
+    INDEX `Order_orderedAt_idx`(`orderedAt`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -148,6 +157,9 @@ CREATE TABLE `OrderItem` (
     `totalPrice` DECIMAL(65, 30) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
+    INDEX `OrderItem_orderId_idx`(`orderId`),
+    INDEX `OrderItem_productId_idx`(`productId`),
+    INDEX `OrderItem_optionVariantId_idx`(`optionVariantId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -158,10 +170,12 @@ CREATE TABLE `UserCart` (
     `productId` INTEGER NOT NULL,
     `optionVariantId` INTEGER NOT NULL,
     `quantity` INTEGER NOT NULL,
-    `price` DECIMAL(65, 30) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
+    INDEX `UserCart_userId_idx`(`userId`),
+    INDEX `UserCart_productId_idx`(`productId`),
+    INDEX `UserCart_optionVariantId_idx`(`optionVariantId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -175,80 +189,11 @@ CREATE TABLE `Payment` (
     `status` ENUM('PENDING', 'COMPLETED', 'CANCELLED') NOT NULL,
     `pgTransactionId` VARCHAR(191) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `paidAt` DATETIME(3) NULL,
-    `cancelledAt` DATETIME(3) NULL,
+    `updatedAt` DATETIME(3) NOT NULL,
 
+    INDEX `Payment_orderId_idx`(`orderId`),
+    INDEX `Payment_userId_idx`(`userId`),
+    INDEX `Payment_status_idx`(`status`),
+    INDEX `Payment_createdAt_idx`(`createdAt`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `PaymentHistory` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `paymentId` INTEGER NOT NULL,
-    `statusBefore` ENUM('PENDING', 'COMPLETED', 'CANCELLED') NOT NULL,
-    `statusAfter` ENUM('PENDING', 'COMPLETED', 'CANCELLED') NOT NULL,
-    `reason` VARCHAR(191) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- AddForeignKey
-ALTER TABLE `UserBalance` ADD CONSTRAINT `UserBalance_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `UserAccount`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `BalanceHistory` ADD CONSTRAINT `BalanceHistory_userBalanceId_fkey` FOREIGN KEY (`userBalanceId`) REFERENCES `UserBalance`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `FcfsCoupon` ADD CONSTRAINT `FcfsCoupon_couponId_fkey` FOREIGN KEY (`couponId`) REFERENCES `Coupon`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `UserCoupon` ADD CONSTRAINT `UserCoupon_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `UserAccount`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `UserCoupon` ADD CONSTRAINT `UserCoupon_couponId_fkey` FOREIGN KEY (`couponId`) REFERENCES `Coupon`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `CouponHistory` ADD CONSTRAINT `CouponHistory_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `UserAccount`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `CouponHistory` ADD CONSTRAINT `CouponHistory_couponId_fkey` FOREIGN KEY (`couponId`) REFERENCES `Coupon`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `ProductImage` ADD CONSTRAINT `ProductImage_productId_fkey` FOREIGN KEY (`productId`) REFERENCES `Product`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `ProductVariant` ADD CONSTRAINT `ProductVariant_productId_fkey` FOREIGN KEY (`productId`) REFERENCES `Product`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Order` ADD CONSTRAINT `Order_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `UserAccount`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Order` ADD CONSTRAINT `Order_couponId_fkey` FOREIGN KEY (`couponId`) REFERENCES `UserCoupon`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `OrderItem` ADD CONSTRAINT `OrderItem_orderId_fkey` FOREIGN KEY (`orderId`) REFERENCES `Order`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `OrderItem` ADD CONSTRAINT `OrderItem_productId_fkey` FOREIGN KEY (`productId`) REFERENCES `Product`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `OrderItem` ADD CONSTRAINT `OrderItem_optionVariantId_fkey` FOREIGN KEY (`optionVariantId`) REFERENCES `ProductVariant`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `UserCart` ADD CONSTRAINT `UserCart_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `UserAccount`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `UserCart` ADD CONSTRAINT `UserCart_productId_fkey` FOREIGN KEY (`productId`) REFERENCES `Product`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `UserCart` ADD CONSTRAINT `UserCart_optionVariantId_fkey` FOREIGN KEY (`optionVariantId`) REFERENCES `ProductVariant`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Payment` ADD CONSTRAINT `Payment_orderId_fkey` FOREIGN KEY (`orderId`) REFERENCES `Order`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Payment` ADD CONSTRAINT `Payment_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `UserAccount`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `PaymentHistory` ADD CONSTRAINT `PaymentHistory_paymentId_fkey` FOREIGN KEY (`paymentId`) REFERENCES `Payment`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
