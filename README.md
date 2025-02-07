@@ -1,55 +1,12 @@
-# 이커머스 서비스 개발
+- 항해플러스 7주차 토요지식회 발표 진행: https://zoom.us/rec/share/qU-rAZ0q0FL8twO5Rqgdx3EMqUGfw8yLaDFfVH3cfnjqPBcI1URPLlQPVMjMJmlh.QvTBnhTRhWc3Z-sB
+<br/><br/>
+
+# 목표: 이커머스 서비스 개발
 
 ## 프로젝트 개발 계획(Milestone)
 ![alt text](images/milestone2.png)
 - URL: https://github.com/users/efforthye/projects/4/views/4?groupedBy%5BcolumnId%5D=158073164&sortedBy%5Bdirection%5D=desc&sortedBy%5BcolumnId%5D=Labels
 <br/><br/>
-
-## 프로젝트 기능
-#### 1. 선착순 쿠폰 조회
-- 설명: 인증된 유저가 특정 선착순 쿠폰의 상태와 본인의 발급 여부를 확인한다.
-- 주요 흐름:
-  - 유저가 쿠폰 조회 요청을 보낸다.
-  - 서버는 쿠폰의 남은 수량, 총 수량, 유저의 발급 이력을 확인하고 응답한다.
-
-#### 2. 선착순 쿠폰 발급
-- 설명: 인증된 유저가 선착순 쿠폰을 요청하여 발급받는다.
-- 주요 흐름:
-  - 서버는 쿠폰 잔여 수량을 확인하고, 발급 가능 여부를 판단한다.
-  - 발급 가능한 경우 쿠폰 수량을 감소시키고 유저 이력에 추가한다.
-
-#### 3. 유저 쿠폰 목록 조회 
-- 설명: 인증된 유저가 보유한 모든 쿠폰의 목록과 각 쿠폰의 상세 정보를 확인한다.
-- 주요 흐름:
-  - 서버는 유저의 보유 쿠폰 목록과 각 쿠폰의 상세 정보를 조회하여 반환한다.
-
-#### 4. 유저 잔액 조회
-- 설명: 인증된 유저가 자신의 현재 잔액을 확인한다.
-- 주요 흐름:
-  - 서버는 유저의 잔액 데이터를 조회하여 반환한다.
-- 기대 동작: 유저는 자신의 현재 잔액 정보를 정확히 확인한다.
-
-#### 5. 유저 잔액 충전
-- 설명: 인증된 유저가 자신의 잔액을 요청 금액만큼 충전한다.
-- 주요 흐름:
-  - 서버는 충전 요청을 처리하고, 잔액 데이터를 업데이트한다.
-
-#### 6. 인기 상품 조회
-- 설명: 최근 특정 기간 동안 가장 많이 판매된 상품을 조회한다.
-- 주요 흐름:
-  - 캐시에 저장된 인기 상품 데이터를 확인하거나, 데이터베이스에서 최신 데이터를 집계한다.
-- 기대 동작: 인기 상품 목록을 빠르고 정확하게 제공하며, 캐시를 활용해 성능을 최적화한다.
-
-#### 7. 상품 상세 조회
-- 설명: 특정 상품의 상세 정보를 유저에게 제공한다.
-- 주요 흐름:
-  - 서버는 상품의 기본 정보, 이미지, 옵션, 설명 등을 조회하여 반환한다.
-
-#### 8. 장바구니 상품 추가
-- 설명: 인증된 유저가 특정 상품을 장바구니에 추가한다.
-- 주요 흐름:
-  - 서버는 요청한 상품과 옵션의 재고를 확
-<br/><br/><br/>
 
 # 이커머스 시스템 설계
 ## 목차
@@ -390,36 +347,7 @@ UNIQUE INDEX idx_product_variant_unique ON product_variant(product_id, option_na
 ### Swagger API Docs
 ![alt text](images/swagger_mock.png)
 - 서버 실행 -> http://localhost:3000/api 접근
-#### 선착순 쿠폰 목록 조회
-![alt text](images/swagger/선착순쿠폰목록조회.png)
-#### 선착순 쿠폰 정보 조회
-![alt text](images/swagger/선착순쿠폰정보조회.png)
-#### 선착순 쿠폰 발급
-![alt text](images/swagger/선착순쿠폰발급.png)
-#### 유저 쿠폰 목록 조회
-![alt text](images/swagger/유저의쿠폰목록조회.png)
-#### 유저 잔액 조회
-![alt text](images/swagger/유저잔액조회.png)
-#### 유저 잔액 충전
-![alt text](images/swagger/유저잔액충전.png)
-#### 인기 상품 목록 조회
-![alt text](images/swagger/인기상품목록조회.png)
-#### 상품 상세 정보 조회
-![alt text](images/swagger/상품상세정보조회.png)
-#### 주문 생성
-![alt text](images/swagger/주문생성.png)
-#### 주문 상태 변경
-![alt text](images/swagger/주문상태변경.png)
-#### 결제
-![alt text](images/swagger/결제.png)
-#### 결제 내역 조회
-![alt text](images/swagger/결제내역조회.png)
-#### 결제 상세정보 조회
-![alt text](images/swagger/결제상세정보조회.png)
-
 <br/><br/>
-
-
 
 
 ## 프로젝트 구조 및 실행 방법
