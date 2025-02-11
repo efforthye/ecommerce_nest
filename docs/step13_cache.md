@@ -20,7 +20,7 @@
 
 
 ### 캐시의 정의 및 주요 캐싱 전략 4가지
-![alt text](image-2.png)
+![alt text](../images/cache/image-2.png)
 #### 캐시의 정의
 - 캐시는 데이터를 임시로 복사해두는 Storage 계층으로, 적은 부하로 API 응답을 빠르게 처리하기 위해 사용한다. 우리 주변에서는 CPU 캐시(자주 접근하는 데이터를 메모리에 저장), DNS 캐시(웹사이트 IP를 기록하여 DNS 조회 수 감소), CDN(이미지/영상 등 컨텐츠를 CDN 서버에 저장하여 애플리케이션 부하 감소) 등을 예로 들 수 있다.
 - 캐시는 크게 애플리케이션의 메모리를 사용하는 'application level'과 Redis와 같은 외부 캐시 서비스를 사용하는 'external level'로 나눌 수 있으며, application level은 속도가 빠르고 비용이 적지만 애플리케이션이 종료되면 데이터가 삭제되고 분산 환경에서 데이터 불일치 문제가 발생할 수 있다. external level은 별도의 캐시 서비스를 통해 분산 환경에서도 일관된 데이터를 제공할 수 있고 장애 발생 시 복구가 용이하지만 네트워크 통신 비용이 발생한다는 특징이 있다.
@@ -45,12 +45,12 @@
             }
             ```
         - 단일 서버 환경의 어플리케이션 캐시
-        ![alt text](image-1.png)
+        ![alt text](../images/cache/image-1.png)
         - 분산 환경에서의 어플리케이션 캐시
-        ![alt text](image-3.png)
+        ![alt text](../images/cache/image-3.png)
 
     - external Level (별도의 캐시 서비스): 별도의 캐시 Storage 혹은 이를 담당하는 API 서버를 통해 캐싱 환경을 제공한다.
-    ![alt text](image.png)
+    ![alt text](../images/cache/image.png)
 
 #### 캐시 스탬피드(Cache Stampede) 현상
     캐시 스탬피드 현상은 캐시가 없을 때 다수의 요청이 동시에 DB 조회를 시도하여 과도한 부하가 발생하는 현상이다. 예를 들면 캐시 데이터 조회에 100ms가 소요되는 상황에서 100ms 이내에 10만 트래픽이 동시에 유입되는 경우 모든 요청이 캐시 미스로 인해 DB 조회를 시도하게 되는데 이는 DB 부하 급증으로 시스템 장애 가능성이 증가하게 된다.
@@ -97,14 +97,13 @@ const updateStock = async (productId, quantity) => {
 #### 4. Write-Behind (Write-Back)
 Write Behind는 말그대로 데이터를 캐시에 먼저 쓰고, 일정 시간 후에 배치로 DB에 기록하는 방식이다. 이 방식은 쓰기 성능을 높일 수 있지만 시스템 장애 시 데이터 유실 가능성이 있어 로그 데이터나 통계 데이터처럼 중요도가 약간의 손실이 허용되는 정도의 데이터를 캐싱할 때 활용한다.
 
-
 ### Redis 자료 구조 및 명령어
-![alt text](image-5.png)
+![alt text](../images/cache/image-5.png)
 - 이미지 출처: https://programmingiraffe.tistory.com/170
 - Redis는 key-value 형식의 데이터 구조를 지원하는 데이터베이스로, 위와 같이 key에 해당하는 value의 값으로 다양한 자료구조를 지원한다.
 
 #### 자주 쓰이는 명령어
-![alt text](image-4.png)
+![alt text](../images/cache/image-4.png)
 - **Strings**: Key-Value 형태로 저장되는 가장 기본적인 데이터 타입이다.
 - Hashes: 필드-값 쌍을 저장하는 객체와 유사한 데이터 구조이다.
 - Lists: 문자열을 양방향으로 삽입/삭제할 수 있는 Linked List 구조로 되어있다.
