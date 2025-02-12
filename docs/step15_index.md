@@ -347,7 +347,7 @@ API 목록의 검색조건과 카디널리티를 분석한 결과, 주요 인덱
 | 에러율 | http_req_failed의 카운트 |
 
 ### 인덱스 적용 전
-![alt text](../images/index/<스크린샷 2025-02-13 오후 10.17.48.png>)
+![alt text](../images/index/indexstart.png)
 ![alt text](../images/index/KakaoTalk_Photo_2025-02-13-22-29-05.jpeg)
 #### 모니터링 지표별 결과
 | 지표 | 값 | 설명 |
