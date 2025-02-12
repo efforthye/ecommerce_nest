@@ -372,8 +372,75 @@ API 목록의 검색조건과 카디널리티를 분석한 결과, 주요 인덱
 - Concurrent Users (최대 659명, 평균 366명): 동시 사용자 증가에 따른 성능 저하 패턴 확인 가능
 
 #### 결론
-- 성능 테스트 결과에 따르면, 평균 응답시간(1,075ms)과 최대 응답시간(6,107ms)의 큰 차이, 높은 표준편차(975.39ms), 그리고 95/99 백분위수(2,834ms/4,666ms) 응답시간의 급격한 증가 패턴이 관찰되는데, 이는 데이터베이스에서 자주 조회되는 컬럼에 대한 인덱스가 없어 발생하는 전체 테이블 스캔(Full Table Scan) 현상으로 인한 것으로 판단되며, 특히 동시 접속자 수가 증가할 때(최대 659명, 평균 366명) 최대 응답 시간이 약 6초 이상 크게 악화되는 것으로 보아 인덱스 설계와 적용을 통해 데이터 검색 성능을 최적화할 필요가 있는 것으로 확인 되었습니다.
+- 성능 테스트 결과에 따르면, 평균 응답시간(1,075ms)과 최대 응답시간(6,107ms)의 큰 차이, 높은 표준편차(975.39ms), 그리고 95/99 백분위수(2,834ms/4,666ms) 응답시간의 급격한 증가 패턴이 관찰되는데, 이는 데이터베이스에서 자주 조회되는 컬럼에 대한 인덱스가 없어 발생하는 전체 테이블 스캔(Full Table Scan) 현상으로 인한 것으로 판단되며, 특히 동시 접속자 수가 증가할 때(최대 659명, 평균 366명) 최대 응답 시간이 약 6초 이상 크게 악화되는 것으로 보아 인덱스 설계와 적용을 통해 데이터 검색 성능을 최적화할 필요가 있는 것으로 확인 되었다.
 
 ### 인덱스 적용
 
+#### 인덱스 적용 전 Explain 확인 (EXPLAIN ANALYZE)
+```sql
+-- Order 테이블 조회 쿼리의 실행 계획 확인
+EXPLAIN ANALYZE 
+SELECT * 
+FROM `Order` 
+WHERE userId = 12345 
+AND status = 'PENDING';
+LIMIT 10;
+```
+- 결과(```'-> Limit: 10 row(s)  (cost=2.29e+6 rows=10) (actual time=1420..8274 rows=10 loops=1)\n    -> Filter: (`Order`.userId = 12345)  (cost=2.29e+6 rows=2.11e+6) (actual time=1420..8274 rows=10 loops=1)\n        -> Table scan on Order  (cost=2.29e+6 rows=21.1e+6) (actual time=14.6..7979 rows=8.8e+6 loops=1)\n'```): 4.284 sec 소요
 
+
+#### 인덱스 쿼리 적용
+```sql
+-- 기본 인덱스 적용
+CREATE INDEX Order_userId_idx ON `Order` (userId);
+-- 복합 인덱스 적용
+CREATE INDEX idx_order_user_status 
+ON `Order` (userId, status);
+```
+#### 인덱스 적용 후 Explain 확인 (EXPLAIN ANALYZE)
+```sql
+-- Order 테이블 조회 쿼리의 실행 계획 확인
+EXPLAIN ANALYZE 
+SELECT * 
+FROM `Order` 
+WHERE userId = 12345 
+LIMIT 10;
+```
+- 결과: (```Limit: 10 row(s)  (cost=24.5 rows=10) (actual time=165..166 rows=10 loops=1)\n    -> Index lookup on Order using Order_userId_idx (userId=12345)  (cost=24.5 rows=23) (actual time=165..166 rows=10 loops=1)\n```): 0.815 sec 소요
+
+### 인덱스 적용 후
+![alt text](<../images/index/스크린샷 2025-02-14 오전 1.39.29.png>)
+
+#### 측정 지표
+| 지표 | 값 | 설명 |
+|--------|-------|-------------|
+| **Average Response Time** | 342.17ms | 응답 시간 (평균) |
+| **Maximum Response Time** | 2,008ms | 요청 중 가장 긴 응답 시간 |
+| **Minimum Response Time** | 3.4ms | 요청 중 가장 짧은 응답 시간 |
+| **Request Count** | 512,433회 | 처리된 요청 수 |
+| **Maximum Concurrent Users** | 864명 | 최대 동시 접속 사용자 수 |
+| **Average Concurrent Users** | 670명 | 평균 동시 접속 사용자 수 |
+| **Response Time Std. Dev.** | 192.28ms | 응답 시간 표준 편차 |
+| **95th Percentile Response Time** | 759ms | 95%의 응답 시간 |
+| **99th Percentile Response Time** | 1,170ms | 상위 1% 응답 시간 |
+
+#### 분석
+- Average Response Time (342.17ms): 인덱스 적용 전(1,075ms)과 비교하여 68.2% 감소
+- Maximum Response Time (2,008ms): 이전 최대값(6,107ms)의 약 1/3 수준으로 개선
+- Minimum Response Time (191ms): 안정적인 최소 응답 시간 유지
+- Response Time Std. Dev. (192.28ms): 이전(975.39ms)보다 변동폭이 80.3% 감소하여 안정성 향상
+- 95th/99th Percentile (759ms/1,170ms): 상위 구간 응답 시간이 크게 개선됨
+- Concurrent Users (최대 864명, 평균 670명): 더 많은 동시 사용자 처리 가능
+
+#### 결론
+위 테스트 결과는 적절한 인덱스 설계와 적용이 데이터베이스 성능 최적화에 효과적임을 입증하며 인덱스 적용 후 아래와 같이 API의 전반적인 성능과 안정성이 개선되었다.
+1. **응답 시간 개선**
+   - 평균 응답 시간 68.2% 감소 (1,075ms → 342.17ms)
+   - 최대 응답 시간 67.1% 감소 (6,107ms → 2,008ms)
+2. **시스템 안정성 향상**
+   - 표준편차 80.3% 감소 (975.39ms → 192.28ms)
+   - 95/99 백분위수 응답 시간 크게 감소 (2,834ms/4,666ms → 759ms/1,170ms)
+3. **처리 용량 증가**
+   - 최대 동시 접속자 수 31.1% 증가 (659명 → 864명)
+   - 평균 동시 접속자 수 83.1% 증가 (366명 → 670명)
+   - 총 요청 처리량 299% 증가 (128,428회 → 512,433회)

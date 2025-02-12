@@ -1,4 +1,4 @@
-// generate-data.js
+// node scripts/1_generate-datas.js
 const { PrismaClient, OrderStatus, Prisma } = require('@prisma/client');
 const prisma = new PrismaClient();
 

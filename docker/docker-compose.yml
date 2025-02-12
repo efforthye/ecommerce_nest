@@ -1,10 +1,12 @@
+# docker-compose down
 # # 실행 명령어: docker-compose up -d
 # # 사용 포트
+# - Nest JS: 3000
 # - MySQL: 3307 -> 컨테이너 3306
 # - Redis: 6379, 6380, 6381, 6382 -> 컨테이너 6379
 # - Zookeeper: 32181 -> 컨테이너 32181
 # - Kafka: 9092 -> 컨테이너 9092 (내부 29092)
-# - Grafana: 3000 -> 컨테이너 3000
+# - Grafana: 3000 -> 컨테이너 3001
 # - InfluxDB: 8086 -> 컨테이너 8086
 # - K6: 6565 -> 컨테이너 6565
 version: '3.8'
@@ -16,6 +18,8 @@ services:
       MYSQL_DATABASE: ecommerce
     ports:
       - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
 
   redis:
     image: redis:7.2.5-alpine3.20
@@ -78,6 +82,9 @@ services:
       - "8086:8086"
     environment:
       - INFLUXDB_DB=k6
+      - INFLUXDB_HTTP_MAX_BODY_SIZE=0
+      - INFLUXDB_MAX_VALUES_PER_TAG=3000000
+      - INFLUXDB_MAX_SERIES_PER_DATABASE=3000000
     volumes:
       - influxdb-data:/var/lib/influxdb
 
@@ -87,6 +94,7 @@ services:
       - "6565:6565"
     environment:
       - K6_OUT=influxdb=http://influxdb:8086/k6
+      - K6_INFLUXDB_TAGS_LIMIT=3000000
     volumes:
       - ../scripts:/scripts
     depends_on:
@@ -95,3 +103,4 @@ services:
 volumes:
   influxdb-data:
   grafana-data:
+  mysql-data:
