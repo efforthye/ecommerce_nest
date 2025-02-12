@@ -23,6 +23,7 @@ export class DatabaseConfig {
         user: this.configService.get('DB_USER') || 'root',
         password: this.configService.get('DB_PASSWORD') || '1234',
       });
+      console.log({connection});
 
       await connection.query(
         `CREATE DATABASE IF NOT EXISTS ${

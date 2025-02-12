@@ -290,10 +290,10 @@ export class DatabaseSetup {
 
     async initializeDatabase(databaseConfig: any): Promise<void> {
         try {
-            if (await this.isInitialized()) {
-                this.logger.log('Database already initialized, skipping setup...');
-                return;
-            }
+            // if (await this.isInitialized()) {
+            //     this.logger.log('Database already initialized, skipping setup...');
+            //     return;
+            // }
 
             // 데이터베이스 생성
             await databaseConfig.createDatabase();
