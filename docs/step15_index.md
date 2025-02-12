@@ -10,7 +10,7 @@
 대부분의 RDBMS는 B-Tree(Balanced Tree) 구조를 사용한다.
 
 ##### B-Tree (Balanced Tree)
-![alt text](image-1.png)
+![alt text](../images/cache/image-1.png)
 - 균형 잡힌 트리 구조로, 모든 리프 노드가 같은 레벨에 있다
 - 한 노드당 여러 개의 키를 가질 수 있다.
 - 이진 탐색을 통해 시간복잡도 O(log n)으로 데이터 접근 가능하다.
@@ -18,7 +18,7 @@
 ---
 
 ##### Hash Index
-![alt text](image-2.png)
+![alt text](../images/cache/image-2.png)
 - 해시 함수를 사용하여 키를 해시값으로 변환한다.
 - 시간복잡도 O(1)로 매우 빠른 검색 속도를 가진다.
 - 정확한 일치 검색에만 효율적이다.
@@ -27,7 +27,7 @@
 ---
 
 ##### Bitmap Index
-![alt text](image-3.png)
+![alt text](../images/cache/image-3.png)
 - 각 컬럼의 고유값에 대해 비트맵을 생성한다.
 - 카디널리티가 낮은 컬럼(성별, 상태값 등)에 효율적이다.
 - 대량의 데이터에서 AND/OR 연산이 빠르다.
@@ -36,7 +36,7 @@
 ---
 
 ##### R-Tree
-![alt text](image-5.png)
+![alt text](../images/cache/image-5.png)
 - 공간 데이터를 인덱싱하는데 사용한다.
 - 2차원 이상의 데이터를 효율적으로 처리할 수 있다.
 - GIS(지리정보시스템) 데이터베이스에서 주로 사용한다.
@@ -44,7 +44,7 @@
 ---
 
 ##### Full-Text Search Index
-![alt text](image-6.png)
+![alt text](../images/cache/image-6.png)
 - 텍스트 문서의 내용을 인덱싱하는데 사용한다.
 - 단어나 구문 검색에 최적화 되어있다.
 - 역인덱스(Inverted Index) 구조를 사용한다.
@@ -66,7 +66,7 @@
 
 #### 2.1 복합인덱스란?
 둘 이상의 칼럼을 조합하여 생성하는 인덱스를 의미한다. 여러 칼럼을 순서대로 정렬하여 하나의 인덱스로 만듭니다.
-![alt text](image.png)
+![alt text](../images/cache/image.png)
 
 #### 2.2 복합인덱스의 특징
 1. **칼럼 순서의 중요성**:
@@ -347,8 +347,8 @@ API 목록의 검색조건과 카디널리티를 분석한 결과, 주요 인덱
 | 에러율 | http_req_failed의 카운트 |
 
 ### 인덱스 적용 전
-![alt text](<스크린샷 2025-02-13 오후 10.17.48.png>)
-![alt text](KakaoTalk_Photo_2025-02-13-22-29-05.jpeg)
+![alt text](../images/cache/<스크린샷 2025-02-13 오후 10.17.48.png>)
+![alt text](../images/cache/KakaoTalk_Photo_2025-02-13-22-29-05.jpeg)
 #### 모니터링 지표별 결과
 | 지표 | 값 | 설명 |
 |--------|-------|-------------|
