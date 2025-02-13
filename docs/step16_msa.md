@@ -164,7 +164,7 @@ export class OrderCreatedHandler implements IEventHandler<OrderCreatedEvent> {
 ```
 
 ### 백프레셔 처리
-RxJS를 활용한 데이터 흐름 제어:
+RxJS를 활용한 데이터 흐름 제어
 
 ```typescript
 @Injectable()
