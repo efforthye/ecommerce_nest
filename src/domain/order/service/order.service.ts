@@ -8,6 +8,7 @@ import { CreateOrderDto } from 'src/interfaces/dto/order.dto';
 import { COUPON_REPOSITORY, ORDER_REPOSITORY, PRODUCT_REPOSITORY } from 'src/common/constants/app.constants';
 import { CustomLoggerService } from 'src/infrastructure/logging/logger.service';
 import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
+import { DataPlatform } from 'src/infrastructure/external/data-platform';
 
 @Injectable()
 export class OrderService {
@@ -16,14 +17,19 @@ export class OrderService {
         @Inject(PRODUCT_REPOSITORY) private readonly productRepository: ProductRepository,
         @Inject(COUPON_REPOSITORY) private readonly couponRepository: CouponRepository,
         private readonly prisma: PrismaService,
-        private readonly logger: CustomLoggerService
+        private readonly logger: CustomLoggerService,
+        private readonly dataPlatform: DataPlatform
     ) {
         this.logger.setTarget(HttpExceptionFilter.name);
     }
 
+    private sendOrderToDataPlatform(order: Order): true {
+        return true;
+    }
+
     // 주문 생성
     async createOrder(userId: number, createOrderDto: CreateOrderDto): Promise<Order> {
-        return await this.prisma.$transaction(async (tx) => {
+        const order = await this.prisma.$transaction(async (tx) => {
             // 상품 및 재고 확인
             const orderItemsWithProduct = await Promise.all(
                 createOrderDto.items.map(async (item) => {
@@ -114,7 +120,13 @@ export class OrderService {
             //     )
             // );
             // return order;
+
         });
+
+        // 트랜잭션 커밋 이후 데이터 플랫폼으로 전송
+        this.dataPlatform.sendOrderData(order);
+
+        return order;
     }
 
     // 주문 정보 조회
