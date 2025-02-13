@@ -4,7 +4,8 @@ export enum BalanceEvents {
     BALANCE_DEDUCTION_REQUESTED = 'balance.deduction.requested',
     BALANCE_DEDUCTION_COMPLETED = 'balance.deduction.completed',
     BALANCE_CHARGE_REQUESTED = 'balance.charge.requested',
-    BALANCE_CHARGE_COMPLETED = 'balance.charge.completed'
+    BALANCE_CHARGE_COMPLETED = 'balance.charge.completed',
+    BALANCE_CHARGE_FAILED = 'balance.charge.faild'
 }
 
 export interface BalanceCheckEvent {

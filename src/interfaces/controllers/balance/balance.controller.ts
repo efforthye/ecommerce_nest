@@ -3,11 +3,16 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiHeader } from
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { BalanceService } from 'src/domain/balance/service/balance.service';
 import { ParseUserIdInterceptor } from 'src/common/interceptors/parse-user-id.interceptor';
+import { BalanceEvents } from 'src/orchestration/events';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @ApiTags('잔액')
 @Controller('balance')
 export class BalanceController {
-    constructor(private readonly balanceService: BalanceService) {}
+    constructor(
+        private readonly balanceService: BalanceService,
+        private readonly eventEmitter: EventEmitter2
+    ) {}
 
     @ApiOperation({ summary: '유저 잔액 조회' })
     @ApiHeader({ name: 'x-bypass-token', required: true, description: '인증 토큰 (temp bypass key: happy-world-token)', schema: { type: 'string' } })
@@ -31,6 +36,15 @@ export class BalanceController {
     @UseInterceptors(ParseUserIdInterceptor)
     @Post(':userId/charge')
     async chargeBalance(@Headers('x-bypass-token') bypassToken: string, @Param('userId') userId: number, @Body('amount') amount: number) {
-        return this.balanceService.chargeBalance(userId, amount);
+        // return this.balanceService.chargeBalance(userId, amount);
+        const updatedBalance = await this.balanceService.chargeBalance(userId, amount);
+        
+        this.eventEmitter.emit(BalanceEvents.BALANCE_CHARGE_COMPLETED, {
+            userId,
+            amount,
+            currentBalance: updatedBalance.balance
+        });
+
+        return updatedBalance;
     }
 }

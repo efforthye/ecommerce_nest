@@ -4,12 +4,17 @@ import { AddToCartDto, UpdateCartDto } from "../../dto/cart.dto";
 import { CartService } from "src/domain/cart/service/cart.service";
 import { JwtAuthGuard } from "src/common/guards/jwt-auth.guard";
 import { ParseUserIdInterceptor } from "src/common/interceptors/parse-user-id.interceptor";
+import { CartEvents } from "src/orchestration/events";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 
 @Controller('cart')
 @ApiTags('장바구니')
 @UseInterceptors(ParseUserIdInterceptor)
 export class CartController {
-    constructor(private readonly cartService: CartService) {}
+    constructor(
+        private readonly cartService: CartService,
+        private readonly eventEmitter: EventEmitter2
+    ) {}
 
     @ApiOperation({ summary: '장바구니 조회' })
     @ApiHeader({ name: 'x-bypass-token', required: true, description: '인증 토큰 (temp bypass key: happy-world-token)', schema: { type: 'string' } })
@@ -28,8 +33,16 @@ export class CartController {
     @ApiResponse({ status: 201, schema: { example: { id: 1, userId: 1, productId: 1, optionVariantId: 1, quantity: 2 } } })
     @UseGuards(JwtAuthGuard)
     @Post(':userId')
-    addToCart(@Headers('x-bypass-token') bypassToken: string, @Param('userId') userId: number, @Body() dto: AddToCartDto) {
-        return this.cartService.addToCart(userId, dto);
+    async addToCart(@Headers('x-bypass-token') bypassToken: string, @Param('userId') userId: number, @Body() dto: AddToCartDto) {
+        // return this.cartService.addToCart(userId, dto);
+        const addedItem = await this.cartService.addToCart(userId, dto);
+
+        // 장바구니 체크아웃 이벤트 발행
+        this.eventEmitter.emit(CartEvents.CART_CHECKOUT_REQUESTED, {
+            userId
+        });
+
+        return addedItem; // 여전히 동일한 응답을 반환
     }
 
     @ApiOperation({ summary: '장바구니 수량 변경' })

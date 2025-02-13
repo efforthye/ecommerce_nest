@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
-import { ProductEvents } from '../../events';
+import { ProductEvents, ProductStockCheckEvent, ProductStockUpdateEvent } from '../../events';
 import { ProductService } from 'src/domain/product/service/product.service';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 
@@ -13,11 +13,7 @@ export class ProductOrchestrator {
     ) {}
 
     @OnEvent(ProductEvents.PRODUCT_STOCK_CHECK_REQUESTED)
-    async handleStockCheck(payload: {
-        productId: number;
-        variantId: number;
-        requestedQuantity: number;
-    }) {
+    async handleStockCheck(payload: ProductStockCheckEvent) {
         try {
             const product = await this.productService.getProductById(payload.productId);
             const variant = product.variants.find(v => v.id === payload.variantId);
@@ -47,12 +43,7 @@ export class ProductOrchestrator {
     }
 
     @OnEvent(ProductEvents.PRODUCT_STOCK_UPDATED)
-    async handleStockUpdate(payload: {
-        productId: number;
-        variantId: number;
-        quantity: number;
-        operation: 'INCREASE' | 'DECREASE';
-    }) {
+    async handleStockUpdate(payload: ProductStockUpdateEvent) {
         try {
             await this.prisma.$transaction(async (tx) => {
                 // Lock을 걸고 재고 조회
@@ -94,7 +85,7 @@ export class ProductOrchestrator {
                 });
             });
 
-            this.eventEmitter.emit(ProductEvents.PRODUCT_STOCK_UPDATED, {
+            this.eventEmitter.emit(ProductEvents.PRODUCT_STOCK_UPDATE_COMPLETED, {
                 productId: payload.productId,
                 variantId: payload.variantId,
                 quantity: payload.quantity,
@@ -102,13 +93,12 @@ export class ProductOrchestrator {
                 status: 'SUCCESS'
             });
         } catch (error) {
-            this.eventEmitter.emit(ProductEvents.PRODUCT_STOCK_UPDATED, {
+            this.eventEmitter.emit(ProductEvents.PRODUCT_STOCK_UPDATE_FAILED, {
                 productId: payload.productId,
                 variantId: payload.variantId,
                 quantity: payload.quantity,
                 operation: payload.operation,
-                status: 'FAILED',
-                error: error.message
+                reason: error.message
             });
         }
     }

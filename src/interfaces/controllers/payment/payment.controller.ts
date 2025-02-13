@@ -2,8 +2,10 @@ import { Controller, Post, Body, Get, Query, Param, UseGuards, BadRequestExcepti
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery, ApiHeader } from '@nestjs/swagger';
 import { PaymentService } from 'src/domain/payment/service/payment.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { Payment } from '@prisma/client';
+import { Payment, PaymentStatus } from '@prisma/client';
 import { ParseUserIdInterceptor } from 'src/common/interceptors/parse-user-id.interceptor';
+import { PaymentEvents } from 'src/orchestration/events';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @ApiTags('결제')
 @Controller('payments')
@@ -11,7 +13,10 @@ import { ParseUserIdInterceptor } from 'src/common/interceptors/parse-user-id.in
 @UseInterceptors(ParseUserIdInterceptor)
 @ApiHeader({ name: 'x-bypass-token', required: true, description: '인증 토큰 (temp bypass key: happy-world-token)', schema: { type: 'string' } })
 export class PaymentController {
-    constructor(private readonly paymentService: PaymentService) {}
+    constructor(
+        private readonly paymentService: PaymentService,
+        private readonly eventEmitter: EventEmitter2
+    ) {}
 
     /**
      * 결제 처리
@@ -27,10 +32,23 @@ export class PaymentController {
         @Body('userId') userId: number, 
         @Body('orderId') orderId: number
     ): Promise<Payment> {
-        if (!userId || !orderId) {
-            throw new BadRequestException('userId와 orderId는 필수값 입니다.');
+        this.eventEmitter.emit(PaymentEvents.PAYMENT_INITIATED, {
+            userId,
+            orderId
+        });
+
+        const payment = await this.paymentService.processPayment(userId, orderId);
+
+        if (payment.status === PaymentStatus.COMPLETED) {
+            this.eventEmitter.emit(PaymentEvents.PAYMENT_COMPLETED, {
+                paymentId: payment.id,
+                orderId,
+                userId,
+                amount: payment.amount
+            });
         }
-        return this.paymentService.processPayment(userId, orderId);
+
+        return payment;
     }
 
     @ApiOperation({ summary: '결제 내역 조회' }) 
@@ -89,12 +107,21 @@ export class PaymentController {
         @Param('id') paymentId: string, 
         @Query('userId') userId: string,
     ) {
-        const numericUserId = Number(userId);
-        const numericPaymentId = Number(paymentId);
+        // const numericUserId = Number(userId);
+        // const numericPaymentId = Number(paymentId);
+        // if (isNaN(numericUserId)) throw new BadRequestException('userId는 숫자여야 합니다.');
+        // if (isNaN(numericPaymentId)) throw new BadRequestException('paymentId는 숫자여야 합니다.');
+        // return await this.paymentService.cancelPayment(numericUserId, numericPaymentId);
 
-        if (isNaN(numericUserId)) throw new BadRequestException('userId는 숫자여야 합니다.');
-        if (isNaN(numericPaymentId)) throw new BadRequestException('paymentId는 숫자여야 합니다.');
-
-        return await this.paymentService.cancelPayment(numericUserId, numericPaymentId);
+        const payment = await this.paymentService.cancelPayment(
+            Number(userId),
+            Number(paymentId)
+        );
+        this.eventEmitter.emit(PaymentEvents.PAYMENT_CANCELLED, {
+            paymentId: payment.id,
+            orderId: payment.orderId,
+            userId: payment.userId
+        });
+        return payment;
     }
 }

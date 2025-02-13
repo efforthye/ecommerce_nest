@@ -2,13 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { CartRepository } from './cart.repository';
 import { UserCart } from '@prisma/client';
+import { CartItem } from '../types/cart.types';
 
 @Injectable()
 export class CartRepositoryPrisma implements CartRepository {
     constructor(private readonly prisma: PrismaService) {}
 
     // 유저 장바구니 아이템 목록 조회
-    async findByUserId(userId: number): Promise<UserCart[]> {
+    async findByUserId(userId: number): Promise<CartItem[]> {
         return this.prisma.userCart.findMany({
             where: { userId },
             include: {
@@ -23,7 +24,7 @@ export class CartRepositoryPrisma implements CartRepository {
     }
 
     // 장바구니 생성
-    async create(userId: number, productId: number, variantId: number, quantity: number): Promise<UserCart> {
+    async create(userId: number, productId: number, variantId: number, quantity: number): Promise<CartItem> {
         return this.prisma.userCart.create({
             data: {
                 userId,
@@ -43,7 +44,7 @@ export class CartRepositoryPrisma implements CartRepository {
     }
 
     // 장바구니 상품 재고 수량 변경
-    async update(id: number, quantity: number): Promise<UserCart> {
+    async update(id: number, quantity: number): Promise<CartItem> {
         return this.prisma.userCart.update({
             where: { id },
             data: { quantity },
@@ -66,11 +67,15 @@ export class CartRepositoryPrisma implements CartRepository {
     }
 
     // 유저 장바구니 상세 정보 조회
-    async findById(id: number): Promise<UserCart | null> {
+    async findById(id: number): Promise<CartItem | null> {
         return this.prisma.userCart.findUnique({
             where: { id },
             include: {
-                product: true,
+                product: {
+                    include: {
+                        productImages: true
+                    }
+                },
                 productVariant: true
             }
         });

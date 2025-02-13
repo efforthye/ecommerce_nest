@@ -7,12 +7,14 @@ import { PAYMENT_REPOSITORY } from 'src/common/constants/app.constants';
 import { PaymentRepositoryPrisma } from 'src/domain/payment/repository/payment.repository.prisma';
 import { DatabaseModule } from 'src/infrastructure/database/database.module';
 import { PaymentStatisticsService } from './service/payment-statistics.service';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
     imports: [
         DatabaseModule, 
         OrderModule, 
-        BalanceModule
+        BalanceModule,
+        EventEmitterModule.forRoot()
     ],
     controllers: [PaymentController],
     providers: [

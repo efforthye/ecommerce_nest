@@ -5,9 +5,13 @@ import { CartRepositoryPrisma } from './repository/cart.repository.prisma';
 import { ProductModule } from '../product/product.module';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
 import { CART_REPOSITORY } from 'src/common/constants/app.constants';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
-    imports: [ProductModule],
+    imports: [
+        ProductModule,
+        EventEmitterModule.forRoot()
+    ],
     controllers: [CartController],
     providers: [
         CartService,
