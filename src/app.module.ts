@@ -24,6 +24,7 @@ import { PaymentRepositoryPrisma } from "./domain/payment/repository/payment.rep
 import { BalanceRepositoryPrisma } from "./domain/balance/repository/balance.repository.prisma";
 import { CouponRepositoryPrisma } from "./domain/coupon/repository/coupon.repository.prisma";
 import { AppCacheModule } from "./infrastructure/cache/cache.module";
+import { OrchestrationModule } from "./orchestration/orchestration.module";
 
 @Module({
   imports: [
@@ -48,7 +49,8 @@ import { AppCacheModule } from "./infrastructure/cache/cache.module";
     CouponModule,
     LoggerModule,
     CartModule,
-    AppCacheModule
+    AppCacheModule,
+    OrchestrationModule
   ],
   controllers: [
     CouponController,
