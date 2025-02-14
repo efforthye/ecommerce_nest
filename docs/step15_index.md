@@ -383,7 +383,6 @@ EXPLAIN ANALYZE
 SELECT * 
 FROM `Order` 
 WHERE userId = 12345 
-AND status = 'PENDING';
 LIMIT 10;
 ```
 - 결과(```'-> Limit: 10 row(s)  (cost=2.29e+6 rows=10) (actual time=1420..8274 rows=10 loops=1)\n    -> Filter: (`Order`.userId = 12345)  (cost=2.29e+6 rows=2.11e+6) (actual time=1420..8274 rows=10 loops=1)\n        -> Table scan on Order  (cost=2.29e+6 rows=21.1e+6) (actual time=14.6..7979 rows=8.8e+6 loops=1)\n'```): 4.284 sec 소요
