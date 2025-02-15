@@ -7,6 +7,8 @@ import { CreateOrderDto } from 'src/interfaces/dto/order.dto';
 import { ParseUserIdInterceptor } from 'src/common/interceptors/parse-user-id.interceptor';
 import { CustomLoggerService } from 'src/infrastructure/logging/logger.service';
 import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
+import { OrderEvents } from 'src/orchestration/events';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @ApiTags('주문')
 @Controller('order')
@@ -14,6 +16,7 @@ export class OrderController {
     constructor(
         private readonly orderService: OrderService,
         private readonly logger: CustomLoggerService,
+        private readonly eventEmitter: EventEmitter2
     ) {
         this.logger.setTarget(HttpExceptionFilter.name);
     }
@@ -31,7 +34,13 @@ export class OrderController {
         @Param('userId') userId: number,
         @Body() createOrderDto: CreateOrderDto
     ) {
-        this.logger.log(`CreateOrderDto: ${createOrderDto}`);
+        // this.logger.log(`CreateOrderDto: ${createOrderDto}`);
+        // return this.orderService.createOrder(userId, createOrderDto);
+        this.eventEmitter.emit(OrderEvents.ORDER_CREATED, {
+            userId,
+            items: createOrderDto.items,
+            couponId: createOrderDto.couponId
+        });
         return this.orderService.createOrder(userId, createOrderDto);
     }
 
@@ -107,6 +116,13 @@ export class OrderController {
         @Param('orderId') orderId: number, 
         @Body('status') status: OrderStatus
     ) {
-        return this.orderService.updateOrderStatus(orderId, status);
+        // return this.orderService.updateOrderStatus(orderId, status);
+        const order = await this.orderService.updateOrderStatus(orderId, status);
+        this.eventEmitter.emit(OrderEvents.ORDER_STATUS_UPDATED, {
+            orderId,
+            status: order.status,
+            previousStatus: order.status
+        });
+        return order;
     }
 }

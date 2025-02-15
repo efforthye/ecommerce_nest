@@ -111,6 +111,7 @@ model Product {
   variants      ProductVariant[]
   orderItems    OrderItem[]
   userCart      UserCart[]
+  stockHistory  ProductStockHistory[]
 
   @@index([isActive])
   @@index([createdAt])
@@ -145,10 +146,30 @@ model ProductVariant {
   productImages   ProductImage[]
   orderItems      OrderItem[]
   userCart        UserCart[]
+  stockHistory    ProductStockHistory[]
 
   @@unique([productId, optionName])
   @@index([productId])
   @@index([stockQuantity])
+}
+
+// 재고 변동 이력
+model ProductStockHistory {
+  id              Int           @id @default(autoincrement())
+  productId       Int
+  variantId       Int
+  quantity        Int
+  type            String        // 'INCREASE' | 'DECREASE'
+  beforeStock     Int
+  afterStock      Int
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  product         Product       @relation(fields: [productId], references: [id])
+  productVariant  ProductVariant @relation(fields: [variantId], references: [id])
+
+  @@index([productId])
+  @@index([variantId])
+  @@index([createdAt])
 }
 
 // 주문 정보
