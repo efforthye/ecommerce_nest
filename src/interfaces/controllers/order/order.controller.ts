@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Patch, UseGuards, UseInterceptors, Headers, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, Param, Patch, UseGuards, UseInterceptors, Headers, BadRequestException, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiHeader } from '@nestjs/swagger';
 import { OrderService } from 'src/domain/order/service/order.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
@@ -7,6 +7,8 @@ import { CreateOrderDto } from 'src/interfaces/dto/order.dto';
 import { ParseUserIdInterceptor } from 'src/common/interceptors/parse-user-id.interceptor';
 import { CustomLoggerService } from 'src/infrastructure/logging/logger.service';
 import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
+import { OrderEvents } from 'src/orchestration/events';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @ApiTags('주문')
 @Controller('order')
@@ -14,6 +16,7 @@ export class OrderController {
     constructor(
         private readonly orderService: OrderService,
         private readonly logger: CustomLoggerService,
+        private readonly eventEmitter: EventEmitter2
     ) {
         this.logger.setTarget(HttpExceptionFilter.name);
     }
@@ -31,8 +34,74 @@ export class OrderController {
         @Param('userId') userId: number,
         @Body() createOrderDto: CreateOrderDto
     ) {
-        this.logger.log(`CreateOrderDto: ${createOrderDto}`);
+        // this.logger.log(`CreateOrderDto: ${createOrderDto}`);
+        // return this.orderService.createOrder(userId, createOrderDto);
+        this.eventEmitter.emit(OrderEvents.ORDER_CREATED, {
+            userId,
+            items: createOrderDto.items,
+            couponId: createOrderDto.couponId
+        });
         return this.orderService.createOrder(userId, createOrderDto);
+    }
+
+
+    @ApiOperation({ summary: '주문 조회' })
+    @ApiHeader({ name: 'x-bypass-token', required: true, description: '인증 토큰 (temp bypass key: happy-world-token)', schema: { type: 'string' } })
+    @ApiParam({ name: 'orderId', description: '주문 ID' })
+    @ApiResponse({
+        status: 200,
+        schema: {
+            example: {
+                id: 1,
+                userId: 1,
+                totalAmount: 50000,
+                discountAmount: 5000,
+                finalAmount: 45000,
+                status: 'PENDING',
+                items: [],
+            },
+        },
+    })
+    @UseGuards(JwtAuthGuard)
+    @Get(':orderId')
+    async getOrderById(@Headers('x-bypass-token') bypassToken: string, @Param('orderId') orderId: number) {
+        const order = await this.orderService.findOrderById(orderId);
+        return order;
+    }
+
+    @ApiOperation({ summary: '특정 유저의 주문 목록 조회' })
+    @ApiHeader({ name: 'x-bypass-token', required: true, description: '인증 토큰 (temp bypass key: happy-world-token)', schema: { type: 'string' } })
+    @ApiParam({ name: 'userId', description: '유저 ID' })
+    @ApiResponse({
+        status: 200,
+        schema: {
+            example: [
+                {
+                    id: 1,
+                    userId: 1,
+                    totalAmount: 50000,
+                    discountAmount: 5000,
+                    finalAmount: 45000,
+                    status: 'PENDING',
+                    items: [],
+                },
+                {
+                    id: 2,
+                    userId: 1,
+                    totalAmount: 70000,
+                    discountAmount: 7000,
+                    finalAmount: 63000,
+                    status: 'PAID',
+                    items: [],
+                }
+            ],
+        },
+    })
+    @UseGuards(JwtAuthGuard)
+    @Get(':userId')
+    async getOrdersByUserId(@Headers('x-bypass-token') bypassToken: string, @Param('userId') userId: number) {
+        const orders = await this.orderService.findOrdersByUserId(userId);
+        return orders;
     }
 
     @ApiOperation({ summary: '주문 상태 업데이트' })
@@ -47,6 +116,13 @@ export class OrderController {
         @Param('orderId') orderId: number, 
         @Body('status') status: OrderStatus
     ) {
-        return this.orderService.updateOrderStatus(orderId, status);
+        // return this.orderService.updateOrderStatus(orderId, status);
+        const order = await this.orderService.updateOrderStatus(orderId, status);
+        this.eventEmitter.emit(OrderEvents.ORDER_STATUS_UPDATED, {
+            orderId,
+            status: order.status,
+            previousStatus: order.status
+        });
+        return order;
     }
 }

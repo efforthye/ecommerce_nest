@@ -7,11 +7,16 @@ import { BadRequestException, Body, Controller, Get, Headers, Param, ParseIntPip
 import { UserCoupon } from "@prisma/client";
 import { JwtAuthGuard } from "src/common/guards/jwt-auth.guard";
 import { ParseUserIdInterceptor } from "src/common/interceptors/parse-user-id.interceptor";
+import { CouponEvents } from "src/orchestration/events";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 
 @ApiTags('쿠폰')
 @Controller("coupons")
 export class CouponController {
-    constructor(private readonly couponService: CouponService) {}
+    constructor(
+        private readonly couponService: CouponService,
+        private readonly eventEmitter: EventEmitter2
+    ) {}
 
     /**
      * 선착순 쿠폰 목록 조회
@@ -58,6 +63,10 @@ export class CouponController {
         @Param("id") id: number,
         @Body("userId", ParseIntPipe) userId: number,
     ): Promise<UserCoupon> {
+        this.eventEmitter.emit(CouponEvents.COUPON_ISSUE_REQUESTED, {
+            userId,
+            fcfsCouponId: id
+        });
         return this.couponService.issueFcfsCoupon(userId, id);
     }
 
