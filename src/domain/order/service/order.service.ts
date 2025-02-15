@@ -133,4 +133,11 @@ export class OrderService {
 
         return this.orderRepository.updateOrderStatus(orderId, status);
     }
+
+    // 특정 유저의 주문 목록 조회
+    async findOrdersByUserId(userId: number) {
+        return this.prisma.order.findMany({
+            where: { userId },
+        });
+    }
 }
