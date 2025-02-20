@@ -110,6 +110,7 @@ docker logs docker-zookeeper-1
 ## 적용 확인
 - kafka ui
 ![alt text](image-1.png)
+![alt text](image.png)
 - log
 ```
 [Winston] 84487  - 02/21/2025, 12:59:54 AM  LOG [REQUEST] POST /order/1 params={"userId":"1"} body={"items":[{"productId":1,"variantId":1,"quantity":2}],"couponId":1}
