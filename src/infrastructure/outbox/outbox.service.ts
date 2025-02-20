@@ -17,6 +17,7 @@ export class OutboxService {
             
             const pendingEvents = await this.prisma.outboxEvent.findMany({
                 where: {
+                    status: 'INIT',
                     OR: [
                         { status: 'PENDING' },
                         { 
@@ -33,6 +34,12 @@ export class OutboxService {
 
             for (const event of pendingEvents) {
                 try {
+                    // 이미 퍼블리시 된 이벤트는 처리하지 않도록 방어
+                    if (event.status === 'PUBLISHED') {
+                        this.logger.log(`Event ${event.id} is already published. Skipping.`);
+                        continue;
+                    }
+    
                     this.logger.log(`Processing event: ${JSON.stringify({
                         id: event.id,
                         type: event.eventType,
