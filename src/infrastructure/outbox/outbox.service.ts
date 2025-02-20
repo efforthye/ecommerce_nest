@@ -24,7 +24,10 @@ export class OutboxService {
                             status: 'FAILED',
                             retryCount: { lt: 3 }
                         }
-                    ]
+                    ],
+                    updatedAt: {
+                        lt: new Date(Date.now() - 5 * 60 * 1000) // 현재 시간에서 5분 전
+                    }
                 },
                 orderBy: { createdAt: 'asc' },
                 take: 10

@@ -10,7 +10,7 @@ export class OutboxScheduler {
         private readonly logger: CustomLoggerService
     ) {}
 
-    @Cron(CronExpression.EVERY_10_SECONDS, {
+    @Cron(CronExpression.EVERY_5_MINUTES, { // EVERY_10_SECONDS
         name: 'process-outbox-events'
     })
     async handleOutboxEvents() {
