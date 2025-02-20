@@ -9,6 +9,7 @@ import { COUPON_REPOSITORY, ORDER_REPOSITORY, PRODUCT_REPOSITORY } from 'src/com
 import { CustomLoggerService } from 'src/infrastructure/logging/logger.service';
 import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
 import { DataPlatform } from 'src/infrastructure/external/data-platform';
+import { KafkaService } from 'src/infrastructure/kafka/kafka.service';
 
 @Injectable()
 export class OrderService {
@@ -18,13 +19,10 @@ export class OrderService {
         @Inject(COUPON_REPOSITORY) private readonly couponRepository: CouponRepository,
         private readonly prisma: PrismaService,
         private readonly logger: CustomLoggerService,
-        private readonly dataPlatform: DataPlatform
+        private readonly dataPlatform: DataPlatform,
+        private readonly kafkaService: KafkaService // KafkaService 주입
     ) {
         this.logger.setTarget(HttpExceptionFilter.name);
-    }
-
-    private sendOrderToDataPlatform(order: Order): true {
-        return true;
     }
 
     // 주문 생성
@@ -83,13 +81,12 @@ export class OrderService {
                     }
                 } catch (error) {
                     this.logger.error(`Coupon processing error: ${error}`);
-                    // 쿠폰 처리 중 오류가 발생해도 주문은 계속 진행
                 }
             }
             const finalAmount = totalAmount - discountAmount;
 
             // 주문 및 주문상품 생성
-            return await this.orderRepository.createOrder({
+            const createdOrder = await this.orderRepository.createOrder({
                 user: { connect: { id: userId } },
                 totalAmount: new Prisma.Decimal(totalAmount),
                 discountAmount: new Prisma.Decimal(discountAmount),
@@ -105,48 +102,60 @@ export class OrderService {
                     }))
                 },
                 ...(couponConnect && {
-                    coupon: { connect: couponConnect }  // UserCoupon과 연결
+                    coupon: { connect: couponConnect }
                 })
             });
 
-            // 재고 감소 -> 결제 완료 이후에 차감
-            // await Promise.all(
-            //     orderItemsWithProduct.map(item => 
-            //         this.productRepository.decreaseVariantStock(
-            //             item.variant.id,
-            //             item.quantity,
-            //             tx
-            //         )
-            //     )
-            // );
-            // return order;
+            // Kafka로 주문 생성 이벤트 발행
+            await this.kafkaService.emit('order.created', {
+                orderId: createdOrder.id,
+                userId: userId,
+                totalAmount: totalAmount,
+                discountAmount: discountAmount,
+                finalAmount: finalAmount,
+                items: orderItemsWithProduct.map(item => ({
+                    productId: item.product.id,
+                    variantId: item.variant.id,
+                    quantity: item.quantity,
+                    price: Number(item.variant.price)
+                })),
+                couponId: createOrderDto.couponId
+            });
 
+            return createdOrder;
         });
 
-        // 트랜잭션 커밋 이후 데이터 플랫폼으로 전송
+        // 데이터 플랫폼으로 전송
         this.dataPlatform.sendOrderData(order);
 
         return order;
     }
 
-    // 주문 정보 조회
+    // 기존 메서드들 유지
     async findOrderById(orderId: number): Promise<Order> {
         const order = await this.orderRepository.findOrderById(orderId);
         if (!order) throw new NotFoundException(`Order ${orderId} not found`);
         return order;
     }
 
-    // 주문 상태 업데이트
     async updateOrderStatus(orderId: number, status: OrderStatus): Promise<Order> {
         const order = await this.orderRepository.findOrderById(orderId);
         if (!order) {
             throw new NotFoundException(`Order ${orderId} not found`);
         }
 
-        return this.orderRepository.updateOrderStatus(orderId, status);
+        const updatedOrder = await this.orderRepository.updateOrderStatus(orderId, status);
+        
+        // 주문 상태 변경 이벤트 발행
+        await this.kafkaService.emit('order.status.updated', {
+            orderId: orderId,
+            status: status,
+            previousStatus: order.status
+        });
+
+        return updatedOrder;
     }
 
-    // 특정 유저의 주문 목록 조회
     async findOrdersByUserId(userId: number) {
         return this.prisma.order.findMany({
             where: { userId },

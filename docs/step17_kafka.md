@@ -106,3 +106,12 @@ docker logs docker-zookeeper-1
   - kafka1: 9092
   - kafka2: 9093
   - kafka3: 9094
+
+## 적용 확인
+- kafka ui
+![alt text](image-1.png)
+- log
+```
+[Winston] 84487  - 02/21/2025, 12:59:54 AM  LOG [REQUEST] POST /order/1 params={"userId":"1"} body={"items":[{"productId":1,"variantId":1,"quantity":2}],"couponId":1}
+[Winston] 84487  - 02/21/2025, 12:59:54 AM  LOG [SUCCESS] POST /order/1 201 108ms
+```

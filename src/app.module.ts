@@ -25,6 +25,7 @@ import { BalanceRepositoryPrisma } from "./domain/balance/repository/balance.rep
 import { CouponRepositoryPrisma } from "./domain/coupon/repository/coupon.repository.prisma";
 import { AppCacheModule } from "./infrastructure/cache/cache.module";
 import { OrchestrationModule } from "./orchestration/orchestration.module";
+import { KafkaModule } from "./infrastructure/kafka/kafka.module";
 
 @Module({
   imports: [
@@ -50,7 +51,8 @@ import { OrchestrationModule } from "./orchestration/orchestration.module";
     LoggerModule,
     CartModule,
     AppCacheModule,
-    OrchestrationModule
+    OrchestrationModule,
+    KafkaModule
   ],
   controllers: [
     CouponController,

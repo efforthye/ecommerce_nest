@@ -11,12 +11,14 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DataPlatform } from 'src/infrastructure/external/data-platform';
 import { ProductRepositoryPrisma } from '../product/repository/product.repository.impl';
 import { CouponRepositoryPrisma } from '../coupon/repository/coupon.repository.prisma';
+import { KafkaModule } from 'src/infrastructure/kafka/kafka.module';
 
 @Module({
     imports: [
         ProductModule,
         forwardRef(() => CouponModule),
-        EventEmitterModule.forRoot()
+        EventEmitterModule.forRoot(),
+        KafkaModule
     ],
     controllers: [OrderController],
     providers: [
