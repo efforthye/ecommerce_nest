@@ -26,11 +26,13 @@ import { PaymentStatisticsService } from 'src/domain/payment/service/payment-sta
 import { RedisModule } from 'src/infrastructure/redis/redis.module';
 import { CouponRedisRepository } from 'src/domain/coupon/repository/coupon.redis.repository';
 import { RedisRedlock } from 'src/infrastructure/redis/redis.redlock';
+import { KafkaModule } from 'src/infrastructure/kafka/kafka.module';
 
 @Module({
     imports: [
         EventEmitterModule.forRoot(),
-        RedisModule
+        RedisModule,
+        KafkaModule,
     ],
     providers: [
         PrismaService,

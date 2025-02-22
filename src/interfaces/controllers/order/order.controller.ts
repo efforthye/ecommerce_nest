@@ -9,6 +9,7 @@ import { CustomLoggerService } from 'src/infrastructure/logging/logger.service';
 import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
 import { OrderEvents } from 'src/orchestration/events';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { KafkaService } from 'src/infrastructure/kafka/kafka.service';
 
 @ApiTags('주문')
 @Controller('order')
@@ -16,7 +17,8 @@ export class OrderController {
     constructor(
         private readonly orderService: OrderService,
         private readonly logger: CustomLoggerService,
-        private readonly eventEmitter: EventEmitter2
+        private readonly eventEmitter: EventEmitter2,
+        private readonly kafkaService: KafkaService,
     ) {
         this.logger.setTarget(HttpExceptionFilter.name);
     }
@@ -36,11 +38,21 @@ export class OrderController {
     ) {
         // this.logger.log(`CreateOrderDto: ${createOrderDto}`);
         // return this.orderService.createOrder(userId, createOrderDto);
-        this.eventEmitter.emit(OrderEvents.ORDER_CREATED, {
+        // this.eventEmitter.emit(OrderEvents.ORDER_CREATED, {
+        //     userId,
+        //     items: createOrderDto.items,
+        //     couponId: createOrderDto.couponId
+        // });
+
+        // 카프카로 주문 생성 이벤트 발행
+        const order = await this.orderService.createOrder(userId, createOrderDto);
+        await this.kafkaService.emit('order.created', {
+            orderId: order.id,
             userId,
             items: createOrderDto.items,
             couponId: createOrderDto.couponId
         });
+
         return this.orderService.createOrder(userId, createOrderDto);
     }
 
