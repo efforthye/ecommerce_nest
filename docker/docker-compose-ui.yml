@@ -1,3 +1,4 @@
+# docker-compose -f docker-compose-ui.yml up -d
 version: "2"
 services:
   kafka-ui:
@@ -8,7 +9,5 @@ services:
     restart: always
     environment:
       - KAFKA_CLUSTERS_0_NAME=local
-      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
-      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:22181
-
-# docker-compose -f docker-compose-ui.yml up -d
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka1:29092,kafka2:29093,kafka3:29094
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
