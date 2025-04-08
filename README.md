@@ -2,7 +2,7 @@
 - 인덱스 성능 보고서: https://github.com/efforthye/hhplus_ecommerce_nest/blob/step16_msa_transaction_solution/docs/step15_index.md
 <br/><br/>
 
-# 목표: 이커머스 서비스 개발
+# 목표: 간단한 이커머스 서비스를 Nest.js로 개발 해보기
 
 ## 프로젝트 개발 계획(Milestone)
 ![alt text](images/milestone2.png)
